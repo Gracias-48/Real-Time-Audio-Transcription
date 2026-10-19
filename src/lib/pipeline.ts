@@ -60,6 +60,7 @@ export class TranscriptionPipeline {
 
       // Initialize Silero VAD from self-hosted assets
       this.vad = await MicVAD.new({
+        model: 'v5',
         baseAssetPath: '/vad/',
         onnxWASMBasePath: '/vad/',
         positiveSpeechThreshold: settings.vadThreshold,
