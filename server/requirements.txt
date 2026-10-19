@@ -1,0 +1,10 @@
+faster-whisper>=1.2,<2
+fastapi>=0.110
+uvicorn[standard]>=0.29
+numpy>=1.26
+onnxruntime>=1.17
+websockets>=12
+pytest>=8
+# GPU (optional, NVIDIA + CUDA 12): CTranslate2 needs cuBLAS + cuDNN 9 DLLs
+nvidia-cublas-cu12; sys_platform == "win32" or sys_platform == "linux"
+nvidia-cudnn-cu12>=9,<10; sys_platform == "win32" or sys_platform == "linux"
