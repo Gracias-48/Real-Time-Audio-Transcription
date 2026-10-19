@@ -10,6 +10,7 @@ export class TranscriptionPipeline {
   private vad: MicVAD | null = null
   private isRunning: boolean = false
   private sessionStartTime: number = 0
+  private totalElapsedBeforeStartMs: number = 0
 
   // Rolling utterance audio state
   private isSpeaking: boolean = false
@@ -42,13 +43,16 @@ export class TranscriptionPipeline {
 
   async start(settings: Settings): Promise<void> {
     if (this.isRunning) return
+    const store = useAppStore.getState()
+    const existingSentences = store.sentences
+    const lastSentence = existingSentences[existingSentences.length - 1]
+    this.totalElapsedBeforeStartMs = lastSentence && lastSentence.startMs >= 0 ? (lastSentence.startMs + 2000) : 0
     this.sessionStartTime = performance.now()
     this.isRunning = true
     this.isSpeaking = false
     this.utteranceChunks = []
-    this.currentUttId = 1
+    this.currentUttId = existingSentences.length + 1
 
-    const store = useAppStore.getState()
     store.setStatus('loading', 'Loading Whisper AI model (on-device)...')
 
     try {
@@ -74,9 +78,11 @@ export class TranscriptionPipeline {
 
         onSpeechStart: () => {
           this.isSpeaking = true
-          this.utteranceStartMs = performance.now() - this.sessionStartTime
+          this.utteranceStartMs = Math.round((performance.now() - this.sessionStartTime) + this.totalElapsedBeforeStartMs)
           this.lastPartialTime = performance.now()
-          useAppStore.getState().setIsSpeaking(true)
+          const s = useAppStore.getState()
+          s.setIsSpeaking(true)
+          s.setCurrentUtteranceStartMs(this.utteranceStartMs)
         },
 
         onFrameProcessed: (_probs, frame) => {
@@ -90,7 +96,8 @@ export class TranscriptionPipeline {
         onSpeechEnd: async (audio) => {
           if (!this.isRunning) return
           this.isSpeaking = false
-          useAppStore.getState().setIsSpeaking(false)
+          const s = useAppStore.getState()
+          s.setIsSpeaking(false)
           const audioToCommit = audio && audio.length > 16000 * 0.25 ? audio : this.flattenChunks()
           this.utteranceChunks = []
           await this.commitUtterance(audioToCommit, settings)
@@ -98,9 +105,11 @@ export class TranscriptionPipeline {
 
         onVADMisfire: () => {
           this.isSpeaking = false
-          useAppStore.getState().setIsSpeaking(false)
+          const s = useAppStore.getState()
+          s.setIsSpeaking(false)
+          s.setCurrentUtteranceStartMs(0)
           this.utteranceChunks = []
-          useAppStore.getState().setPartialText('')
+          s.setPartialText('')
         },
       })
 
@@ -161,7 +170,7 @@ export class TranscriptionPipeline {
       const rtf = Number(((res.ms / 1000) / (audioMs / 1000)).toFixed(2))
 
       if (res.text) {
-        useAppStore.getState().setPartialText(`...${res.text}`)
+        useAppStore.getState().setPartialText(res.text.trim())
       }
 
       const metric: UtteranceMetric = {
@@ -185,9 +194,11 @@ export class TranscriptionPipeline {
   }
 
   private async commitUtterance(audio: Float32Array, settings: Settings) {
+    const store = useAppStore.getState()
     if (!this.engine || audio.length < 16000 * 0.3) {
       this.utteranceChunks = []
-      useAppStore.getState().setPartialText('')
+      store.setPartialText('')
+      store.setCurrentUtteranceStartMs(0)
       return
     }
 
@@ -204,9 +215,10 @@ export class TranscriptionPipeline {
 
       const finalized = finalizeSentence(res.text)
       if (finalized) {
-        useAppStore.getState().addSentence(finalized, startMs)
+        store.addSentence(finalized, startMs)
       }
-      useAppStore.getState().setPartialText('')
+      store.setPartialText('')
+      store.setCurrentUtteranceStartMs(0)
 
       const metric: UtteranceMetric = {
         uttId,

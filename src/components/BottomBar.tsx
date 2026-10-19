@@ -8,59 +8,76 @@ interface BottomBarProps {
 }
 
 export const BottomBar: React.FC<BottomBarProps> = ({ onStart, onStop, onExport }) => {
-  const { status, partialText, isSpeaking, downloadProgress } = useAppStore()
+  const { status, isSpeaking, downloadProgress } = useAppStore()
   const isListening = status === 'listening'
   const isLoading = status === 'loading'
   const isBusy = isListening || isLoading
 
   return (
-    <footer className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 px-6 py-4 border-t border-[#1b263b] bg-[#0c1322]/90 backdrop-blur-md rounded-b-2xl">
-      {/* Left: Live Partial Stream */}
-      <div className="flex-1 min-w-0 pr-4">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-slate-200">
-            Live Partial Stream
-          </span>
-          {isListening && isSpeaking && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
-              <span>●</span> SPEECH
+    <footer className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-t border-[#1b263b] bg-[#0c1322]/90 backdrop-blur-md rounded-b-2xl">
+      {/* Left: Audio & Session Status (Transcriptions stream directly above in the transcript panel) */}
+      <div className="flex items-center gap-3.5 min-w-0">
+        {isLoading ? (
+          <div className="flex items-center gap-2.5 text-blue-300 text-xs">
+            <svg className="w-4 h-4 animate-spin text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <span className="font-medium">
+              {downloadProgress !== null
+                ? `Mengunduh model Whisper AI (${downloadProgress}%)...`
+                : 'Menginisialisasi mikrofon & model lokal...'}
             </span>
-          )}
-          {isListening && partialText && (
-            <span className="inline-block w-2 h-2 rounded-full bg-blue-400 animate-ping" />
-          )}
-        </div>
-        <p className="text-[14px] text-[#3b82f6] font-medium leading-relaxed truncate min-h-[22px] select-all">
-          {partialText ? (
-            <span>{partialText}</span>
-          ) : isLoading ? (
-            <span className="text-blue-300 italic flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 animate-spin text-blue-400" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              {downloadProgress !== null ? `Loading model (${downloadProgress}%)...` : 'Initializing engine & microphone...'}
+          </div>
+        ) : isListening ? (
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Animated Audio Wave Indicator */}
+            <div className="flex items-end gap-1 h-4 shrink-0">
+              <span
+                className={`w-1 rounded-full bg-blue-400 transition-all ${
+                  isSpeaking ? 'h-4 animate-bounce' : 'h-1.5 opacity-40'
+                }`}
+              />
+              <span
+                className={`w-1 rounded-full bg-blue-500 transition-all ${
+                  isSpeaking ? 'h-5 animate-bounce [animation-delay:0.15s]' : 'h-2.5 opacity-60'
+                }`}
+              />
+              <span
+                className={`w-1 rounded-full bg-blue-400 transition-all ${
+                  isSpeaking ? 'h-3.5 animate-bounce [animation-delay:0.3s]' : 'h-1.5 opacity-40'
+                }`}
+              />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-200">
+                  {isSpeaking ? '🎙️ Terdeteksi Suara' : 'Mikrofon Siaga (Standby)'}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-blue-950/80 text-blue-300 border border-blue-800/80">
+                  LIVE IN TRANSCRIPT
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 truncate">
+                {isSpeaking
+                  ? 'Kata-kata langsung muncul dan diketik pada baris transkrip di atas.'
+                  : 'Berbicaralah ke mikrofon, transkripsi real-time langsung aktif.'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-slate-400 text-xs">
+            <span className="inline-block w-2 h-2 rounded-full bg-slate-500 shrink-0" />
+            <span>
+              Tekan <strong className="text-slate-300 font-medium">Start</strong> untuk memulai transkripsi langsung di panel atas.
             </span>
-          ) : isListening ? (
-            isSpeaking ? (
-              <span className="text-amber-300 font-medium animate-pulse">
-                🎙️ Hearing voice, processing speech...
-              </span>
-            ) : (
-              <span className="text-slate-400 italic font-normal">
-                Listening for speech from microphone...
-              </span>
-            )
-          ) : (
-            <span className="text-slate-400 italic font-normal">
-              Press Start to begin real-time transcription
-            </span>
-          )}
-        </p>
+          </div>
+        )}
       </div>
 
       {/* Right: Controls (Start, Stop, Export) */}
-      <div className="flex items-center gap-3 shrink-0 self-end lg:self-center">
+      <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
         <button
           onClick={onStart}
           disabled={isBusy}

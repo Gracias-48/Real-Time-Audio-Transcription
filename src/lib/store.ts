@@ -132,6 +132,7 @@ interface AppState {
   engineDevice: string
   sentences: Sentence[]
   partialText: string
+  currentUtteranceStartMs: number
   isSpeaking: boolean
   latencyMs: number // rolling average in ms
   rtf: number // rolling average
@@ -143,6 +144,7 @@ interface AppState {
   setStatus: (status: AppStatus, message?: string) => void
   setEngineDevice: (device: string) => void
   setPartialText: (text: string) => void
+  setCurrentUtteranceStartMs: (ms: number) => void
   setIsSpeaking: (isSpeaking: boolean) => void
   setDownloadProgress: (p: number | null) => void
   addSentence: (text: string, startMs: number) => void
@@ -160,6 +162,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   engineDevice: 'Local Model',
   sentences: loadPersistedSentences(),
   partialText: '',
+  currentUtteranceStartMs: 0,
   isSpeaking: false,
   latencyMs: 0,
   rtf: 0,
@@ -186,6 +189,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setEngineDevice: (device) => set({ engineDevice: device }),
   setPartialText: (partialText) => set({ partialText }),
+  setCurrentUtteranceStartMs: (currentUtteranceStartMs) => set({ currentUtteranceStartMs }),
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   setDownloadProgress: (downloadProgress) => set({ downloadProgress }),
 
@@ -205,7 +209,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       } catch (err) {
         console.warn('Storage quota exceeded:', err)
       }
-      return { sentences: updated, partialText: '' }
+      return { sentences: updated, partialText: '', currentUtteranceStartMs: 0 }
     })
   },
 
@@ -275,6 +279,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       sentences: [],
       partialText: '',
+      currentUtteranceStartMs: 0,
       metrics: [],
       latencyMs: 0,
       rtf: 0,
