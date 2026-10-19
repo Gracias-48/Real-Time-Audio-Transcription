@@ -1,4 +1,5 @@
 import type { ASREngine, BrowserModel, DevicePref, TranscribeResult } from './types'
+import { useAppStore } from './store'
 
 export class BrowserWhisperEngine implements ASREngine {
   readonly id = 'browser' as const
@@ -7,7 +8,14 @@ export class BrowserWhisperEngine implements ASREngine {
 
   private worker: Worker | null = null
   private nextReqId = 1
-  private pending = new Map<number, { resolve: (val: any) => void; reject: (err: any) => void }>()
+  private pending = new Map<
+    number,
+    {
+      resolve: (val: any) => void
+      reject: (err: any) => void
+      onProgress?: (p: number, status?: string) => void
+    }
+  >()
   private isLoaded = false
   private model: BrowserModel
   private prefDevice: DevicePref
@@ -41,6 +49,12 @@ export class BrowserWhisperEngine implements ASREngine {
           resolve()
         },
         reject,
+        onProgress: (p: number, status?: string) => {
+          onProgress(p)
+          if (status) {
+            useAppStore.getState().setStatus('loading', status)
+          }
+        },
       })
 
       this.worker?.postMessage({
@@ -69,18 +83,14 @@ export class BrowserWhisperEngine implements ASREngine {
         reject,
       })
 
-      this.worker?.postMessage(
-        {
-          type: 'transcribe',
-          id: reqId,
-          data: {
-            audio,
-            final: opts.final,
-          },
+      this.worker?.postMessage({
+        type: 'transcribe',
+        id: reqId,
+        data: {
+          audio,
+          final: opts.final,
         },
-        // Transfer the underlying ArrayBuffer to worker for zero-copy high performance
-        [audio.buffer]
-      )
+      })
     })
   }
 
@@ -89,7 +99,9 @@ export class BrowserWhisperEngine implements ASREngine {
     const handler = this.pending.get(id)
 
     if (type === 'progress') {
-      // Progress event during model downloading
+      if (handler?.onProgress) {
+        handler.onProgress(data.progress || 0, data.status)
+      }
       return
     }
 

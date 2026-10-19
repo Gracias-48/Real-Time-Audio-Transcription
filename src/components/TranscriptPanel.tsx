@@ -52,11 +52,12 @@ export const TranscriptPanel: React.FC = () => {
         aria-label="Transcribed sentences list"
       >
         {sentences.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2">
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 text-center px-4">
             <svg className="w-8 h-8 text-slate-500 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
             </svg>
-            <p className="text-sm">Speak into microphone or click "Play Sample" to begin streaming...</p>
+            <p className="text-sm font-medium text-slate-300">Transcript is empty</p>
+            <p className="text-xs text-slate-400">Click &ldquo;Start&rdquo; and speak into your microphone to transcribe in real-time.</p>
           </div>
         ) : (
           sentences.map((s) => {

@@ -9,6 +9,7 @@ env.useBrowserCache = true
 // Point ONNX runtime to self-hosted WASM folder if needed
 if (typeof env.backends?.onnx?.wasm === 'object') {
   env.backends.onnx.wasm.proxy = false
+  env.backends.onnx.wasm.wasmPaths = '/ort/'
 }
 
 let transcriber: any = null
@@ -23,7 +24,7 @@ self.onmessage = async (e: MessageEvent) => {
     try {
       const modelId = model === 'base.en' ? 'onnx-community/whisper-base.en' : 'onnx-community/whisper-tiny.en'
 
-      self.postMessage({ type: 'progress', id, progress: 10, status: 'Initializing engine...' })
+      self.postMessage({ type: 'progress', id, progress: 10, status: `Initializing ${model} engine...` })
 
       // Try WebGPU first if requested / available, fall back to wasm
       const devicesToTry: ('webgpu' | 'wasm')[] =
@@ -38,6 +39,7 @@ self.onmessage = async (e: MessageEvent) => {
 
       for (const dev of devicesToTry) {
         try {
+          console.log(`[ASR Worker] Attempting to load ${modelId} on ${dev}...`)
           self.postMessage({
             type: 'progress',
             id,
@@ -51,7 +53,12 @@ self.onmessage = async (e: MessageEvent) => {
             progress_callback: (info: any) => {
               if (info.status === 'progress' && typeof info.progress === 'number') {
                 const scaled = Math.min(95, Math.round(25 + (info.progress * 0.7)))
-                self.postMessage({ type: 'progress', id, progress: scaled, status: `Downloading ${info.file || 'model'}...` })
+                self.postMessage({
+                  type: 'progress',
+                  id,
+                  progress: scaled,
+                  status: `Downloading model (${scaled}%)...`,
+                })
               }
             },
           })

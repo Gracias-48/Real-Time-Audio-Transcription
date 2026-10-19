@@ -4,10 +4,9 @@ import { Link, useLocation } from 'react-router-dom'
 
 interface TopBarProps {
   onOpenSettings: () => void
-  onPlayDemo: () => void
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onPlayDemo }) => {
+export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
   const { status, statusMessage, latencyMs, rtf, engineDevice, settings } = useAppStore()
   const location = useLocation()
   const isEvaluatePage = location.pathname === '/evaluate'
@@ -30,7 +29,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onPlayDemo }) =>
       <div className="flex items-center gap-3">
         <span className={`inline-block w-3 h-3 rounded-full ${dotColor} transition-all duration-300`} />
         <span className="text-[15px] font-semibold tracking-wide text-slate-100 select-none">
-          {statusMessage || 'Listening - Local Model'}
+          {statusMessage || 'Ready — Click Start to transcribe'}
         </span>
         <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60">
           {settings.engine === 'browser' ? `Browser ${settings.browserModel} (${engineDevice})` : `Python ${settings.pythonModel} (${engineDevice})`}
@@ -58,17 +57,6 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onPlayDemo }) =>
 
         {/* Action icons / navigation */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-          <button
-            onClick={onPlayDemo}
-            title="Play bundled sample lecture audio without microphone"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors cursor-pointer"
-          >
-            <svg className="w-3.5 h-3.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-            </svg>
-            <span className="hidden md:inline">Play Sample</span>
-          </button>
-
           <button
             onClick={onOpenSettings}
             title="ASR & VAD Settings"

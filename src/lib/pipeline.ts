@@ -49,14 +49,16 @@ export class TranscriptionPipeline {
     this.currentUttId = 1
 
     const store = useAppStore.getState()
-    store.setStatus('loading', 'Initializing VAD & Mic...')
+    store.setStatus('loading', 'Loading Whisper AI model (on-device)...')
 
     try {
       if (!this.engine) {
         await this.initialize(settings, (p) => store.setDownloadProgress(p))
       }
 
-      store.setStatus('listening', `Listening - ${this.engine?.label.split(' ')[0] || 'Local Model'}`)
+      if (!this.isRunning) return
+
+      store.setStatus('loading', 'Starting Microphone & Silero VAD...')
 
       // Initialize Silero VAD from self-hosted assets
       this.vad = await MicVAD.new({
@@ -74,6 +76,7 @@ export class TranscriptionPipeline {
           this.isSpeaking = true
           this.utteranceStartMs = performance.now() - this.sessionStartTime
           this.lastPartialTime = performance.now()
+          useAppStore.getState().setIsSpeaking(true)
         },
 
         onFrameProcessed: (_probs, frame) => {
@@ -87,17 +90,24 @@ export class TranscriptionPipeline {
         onSpeechEnd: async (audio) => {
           if (!this.isRunning) return
           this.isSpeaking = false
-          await this.commitUtterance(audio, settings)
+          useAppStore.getState().setIsSpeaking(false)
+          const audioToCommit = audio && audio.length > 16000 * 0.25 ? audio : this.flattenChunks()
+          this.utteranceChunks = []
+          await this.commitUtterance(audioToCommit, settings)
         },
 
         onVADMisfire: () => {
           this.isSpeaking = false
+          useAppStore.getState().setIsSpeaking(false)
           this.utteranceChunks = []
           useAppStore.getState().setPartialText('')
         },
       })
+
+      store.setStatus('listening', `Listening - ${this.engine?.label.split(' ')[0] || 'Local Model'}`)
     } catch (err: any) {
       this.isRunning = false
+      store.setIsSpeaking(false)
       store.setStatus('error', `Microphone/VAD Error: ${err?.message || err}`)
       throw err
     }
@@ -290,8 +300,10 @@ export class TranscriptionPipeline {
   }
 
   async stop(): Promise<void> {
-    if (!this.isRunning) return
     this.isRunning = false
+    this.isSpeaking = false
+    const store = useAppStore.getState()
+    store.setIsSpeaking(false)
 
     if (this.demoInterval) {
       clearInterval(this.demoInterval)
@@ -317,11 +329,12 @@ export class TranscriptionPipeline {
     if (this.utteranceChunks.length > 0) {
       const finalAudio = this.flattenChunks()
       this.utteranceChunks = []
-      const settings = useAppStore.getState().settings
+      const settings = store.settings
       await this.commitUtterance(finalAudio, settings)
     }
 
-    useAppStore.getState().setStatus('idle', 'Idle')
+    store.setPartialText('')
+    store.setStatus('idle', 'Ready — Click Start to transcribe')
   }
 
   dispose(): void {

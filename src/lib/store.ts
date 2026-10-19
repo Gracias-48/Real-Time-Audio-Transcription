@@ -11,7 +11,7 @@ const DEFAULT_SETTINGS: Settings = {
   device: 'auto',
   serverUrl: 'ws://127.0.0.1:8765',
   serverVad: false,
-  vadThreshold: 0.5,
+  vadThreshold: 0.35,
   redemptionMs: 600,
   minSpeechMs: 250,
   preSpeechPadMs: 300,
@@ -99,7 +99,7 @@ function loadPersistedSentences(): Sentence[] {
   } catch (e) {
     console.warn('Failed to parse saved session:', e)
   }
-  return MOCK_INITIAL_SENTENCES
+  return []
 }
 
 interface AppState {
@@ -108,6 +108,7 @@ interface AppState {
   engineDevice: string
   sentences: Sentence[]
   partialText: string
+  isSpeaking: boolean
   latencyMs: number // rolling average in ms
   rtf: number // rolling average
   metrics: UtteranceMetric[]
@@ -118,6 +119,7 @@ interface AppState {
   setStatus: (status: AppStatus, message?: string) => void
   setEngineDevice: (device: string) => void
   setPartialText: (text: string) => void
+  setIsSpeaking: (isSpeaking: boolean) => void
   setDownloadProgress: (p: number | null) => void
   addSentence: (text: string, startMs: number) => void
   toggleHighlight: (id: string) => void
@@ -129,13 +131,14 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
-  status: 'listening',
-  statusMessage: 'Listening - Local Model',
-  engineDevice: 'WebGPU (Local)',
+  status: 'idle',
+  statusMessage: 'Ready — Click Start to transcribe',
+  engineDevice: 'Local Model',
   sentences: loadPersistedSentences(),
-  partialText: MOCK_PARTIAL_TEXT,
-  latencyMs: 420, // 0.42s in mockup
-  rtf: 0.87, // 0.87 in mockup
+  partialText: '',
+  isSpeaking: false,
+  latencyMs: 0,
+  rtf: 0,
   metrics: [],
   settings: loadPersistedSettings(),
   downloadProgress: null,
@@ -151,12 +154,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       defaultMsg = 'Finishing sentence...'
     } else if (status === 'error') {
       defaultMsg = 'Engine Error'
+    } else if (status === 'idle') {
+      defaultMsg = 'Ready — Click Start to transcribe'
     }
     set({ status, statusMessage: message || defaultMsg })
   },
 
   setEngineDevice: (device) => set({ engineDevice: device }),
   setPartialText: (partialText) => set({ partialText }),
+  setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   setDownloadProgress: (downloadProgress) => set({ downloadProgress }),
 
   addSentence: (text, startMs) => {
