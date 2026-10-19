@@ -19,10 +19,12 @@ export class BrowserWhisperEngine implements ASREngine {
   private isLoaded = false
   private model: BrowserModel
   private prefDevice: DevicePref
+  language: string
 
-  constructor(model: BrowserModel = 'tiny.en', prefDevice: DevicePref = 'auto') {
+  constructor(model: BrowserModel = 'tiny', prefDevice: DevicePref = 'auto', language: string = 'id') {
     this.model = model
     this.prefDevice = prefDevice
+    this.language = language
   }
 
   async load(onProgress: (p: number) => void): Promise<void> {
@@ -89,6 +91,7 @@ export class BrowserWhisperEngine implements ASREngine {
         data: {
           audio,
           final: opts.final,
+          language: this.language,
         },
       })
     })

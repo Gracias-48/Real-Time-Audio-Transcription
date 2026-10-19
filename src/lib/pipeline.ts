@@ -33,7 +33,7 @@ export class TranscriptionPipeline {
     if (settings.engine === 'python') {
       this.engine = new PythonServerEngine(settings.serverUrl, settings.pythonModel)
     } else {
-      this.engine = new BrowserWhisperEngine(settings.browserModel, settings.device)
+      this.engine = new BrowserWhisperEngine(settings.browserModel, settings.device, settings.language)
     }
 
     await this.engine.load(onProgress)

@@ -18,8 +18,9 @@ export interface ASREngine {
 }
 
 export type EngineId = 'browser' | 'python'
-export type BrowserModel = 'tiny.en' | 'base.en'
-export type PythonModel = 'tiny.en' | 'base.en' | 'small.en'
+export type BrowserModel = 'tiny' | 'base' | 'tiny.en' | 'base.en'
+export type PythonModel = 'tiny' | 'base' | 'small' | 'tiny.en' | 'base.en' | 'small.en'
+export type Language = 'id' | 'en' | 'auto'
 export type DevicePref = 'auto' | 'webgpu' | 'wasm'
 
 export interface Sentence {
@@ -51,6 +52,7 @@ export interface Settings {
   engine: EngineId
   browserModel: BrowserModel
   pythonModel: PythonModel
+  language: Language
   device: DevicePref
   serverUrl: string
   /** Server-side VAD streaming (true) or browser VAD + server decode (false). */

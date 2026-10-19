@@ -20,9 +20,20 @@ self.onmessage = async (e: MessageEvent) => {
   const { type, id, data } = e.data
 
   if (type === 'load') {
-    const { model = 'tiny.en', device = 'auto' } = data || {}
+    const { model = 'tiny', device = 'auto' } = data || {}
     try {
-      const modelId = model === 'base.en' ? 'onnx-community/whisper-base.en' : 'onnx-community/whisper-tiny.en'
+      let modelId = 'onnx-community/whisper-tiny'
+      if (model === 'tiny.en') {
+        modelId = 'onnx-community/whisper-tiny.en'
+      } else if (model === 'base.en') {
+        modelId = 'onnx-community/whisper-base.en'
+      } else if (model === 'base') {
+        modelId = 'onnx-community/whisper-base'
+      } else {
+        modelId = 'onnx-community/whisper-tiny'
+      }
+
+      const isEnglishOnly = modelId.endsWith('.en')
 
       self.postMessage({ type: 'progress', id, progress: 10, status: `Initializing ${model} engine...` })
 
@@ -70,14 +81,19 @@ self.onmessage = async (e: MessageEvent) => {
 
           // Warmup decode to verify that runtime inference actually works on this device
           console.log(`[ASR Worker] Verifying warmup inference on ${dev}...`)
-          await transcriber(new Float32Array(16000), {
-            language: 'en',
-            task: 'transcribe',
-          })
+          const warmupOpts: any = {
+            return_timestamps: false,
+            chunk_length_s: 30,
+          }
+          if (!isEnglishOnly) {
+            warmupOpts.language = 'id'
+            warmupOpts.task = 'transcribe'
+          }
+          await transcriber(new Float32Array(16000), warmupOpts)
           console.log(`[ASR Worker] Warmup inference succeeded on ${dev}!`)
 
           activeDevice = dev
-          currentModel = model
+          currentModel = modelId
           break
         } catch (err: any) {
           console.warn(`Failed loading/running model on ${dev}:`, err)
@@ -104,7 +120,7 @@ self.onmessage = async (e: MessageEvent) => {
       return
     }
 
-    const { audio, final, prompt } = data
+    const { audio, final, prompt, language } = data
     try {
       if (!audio || audio.length < 800) {
         self.postMessage({
@@ -117,14 +133,26 @@ self.onmessage = async (e: MessageEvent) => {
         return
       }
 
-      const t0 = performance.now()
-      const output = await transcriber(audio, {
-        language: 'en',
-        task: 'transcribe',
+      const isEnglishOnly = currentModel.endsWith('.en')
+      const genOptions: any = {
         return_timestamps: false,
         chunk_length_s: 30,
-        initial_prompt: prompt || undefined,
-      })
+      }
+
+      if (!isEnglishOnly) {
+        const lang = language || 'id'
+        if (lang !== 'auto') {
+          genOptions.language = lang
+        }
+        genOptions.task = 'transcribe'
+      }
+
+      if (prompt) {
+        genOptions.initial_prompt = prompt
+      }
+
+      const t0 = performance.now()
+      const output = await transcriber(audio, genOptions)
 
       const rawText = typeof output === 'string' ? output : (output?.text || '')
       const cleaned = cleanWhisperText(rawText)

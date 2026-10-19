@@ -1,13 +1,14 @@
 import { create } from 'zustand'
 import type { Sentence, UtteranceMetric, Settings, AppStatus } from './types'
 
-const SETTINGS_STORAGE_KEY = 'lecture_transcriber_settings_v1'
+const SETTINGS_STORAGE_KEY = 'lecture_transcriber_settings_v2'
 const TRANSCRIPT_STORAGE_KEY = 'lecture_transcriber_session_v2'
 
 const DEFAULT_SETTINGS: Settings = {
   engine: 'browser',
-  browserModel: 'tiny.en',
-  pythonModel: 'tiny.en',
+  browserModel: 'tiny',
+  pythonModel: 'tiny',
+  language: 'id',
   device: 'auto',
   serverUrl: 'ws://127.0.0.1:8765',
   serverVad: false,
@@ -17,7 +18,7 @@ const DEFAULT_SETTINGS: Settings = {
   preSpeechPadMs: 300,
   partialIntervalMs: 800,
   maxUtteranceS: 15,
-  glossaryPrompt: 'machine learning, neural network, backpropagation, convolutional, transformer, latency, spectrogram',
+  glossaryPrompt: 'sistem operasi, jaringan komputer, pembelajaran mesin, kecerdasan buatan, basis data, algoritma, rekayasa perangkat lunak',
   autoScroll: true,
 }
 
@@ -82,7 +83,15 @@ export const MOCK_PARTIAL_TEXT =
 function loadPersistedSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
-    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return {
+        ...DEFAULT_SETTINGS,
+        ...parsed,
+        browserModel: parsed.browserModel === 'tiny.en' ? 'tiny' : (parsed.browserModel || 'tiny'),
+        language: parsed.language || 'id',
+      }
+    }
   } catch (e) {
     console.warn('Failed to parse saved settings:', e)
   }

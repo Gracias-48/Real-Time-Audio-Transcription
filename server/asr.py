@@ -39,7 +39,7 @@ from features import WhisperLogMel  # noqa: E402
 log = logging.getLogger("asr")
 
 SAMPLE_RATE = 16_000
-SUPPORTED_MODELS = ("tiny.en", "base.en", "small.en")
+SUPPORTED_MODELS = ("tiny", "base", "small", "tiny.en", "base.en", "small.en")
 
 # Whisper tends to "hallucinate" these on silence / noise.
 _HALLUCINATIONS = {
@@ -89,7 +89,8 @@ class ASRService:
         # Replace the library's front-end with our own explicit STFT log-Mel implementation.
         model.feature_extractor = WhisperLogMel(**model.feat_kwargs)
         # Warm-up decode (initialises CUDA kernels / catches missing DLLs early).
-        segs, _ = model.transcribe(np.zeros(SAMPLE_RATE, dtype=np.float32), language="en", beam_size=1)
+        lang = None if name.endswith(".en") else "id"
+        segs, _ = model.transcribe(np.zeros(SAMPLE_RATE, dtype=np.float32), language=lang, beam_size=1)
         list(segs)
         return model
 
@@ -127,26 +128,30 @@ class ASRService:
         model_name: str,
         final: bool,
         initial_prompt: str | None = None,
+        language: str | None = "id",
         beam_size_final: int = 5,
     ) -> Result:
         model, device, _ = self.get(model_name)
         audio = np.asarray(audio, dtype=np.float32)
         audio_s = len(audio) / SAMPLE_RATE
+        is_en_only = model_name.endswith(".en")
         with self._decode_lock:
             t0 = time.perf_counter()
-            segments, _info = model.transcribe(
-                audio,
-                language="en",
-                task="transcribe",
+            transcribe_kwargs = dict(
                 beam_size=beam_size_final if final else 1,
                 best_of=1,
                 temperature=[0.0, 0.2, 0.4] if final else 0.0,
                 condition_on_previous_text=False,
                 without_timestamps=True,
-                vad_filter=False,  # VAD is done upstream (browser or our streaming VAD)
+                vad_filter=False,  # VAD is done upstream
                 initial_prompt=initial_prompt or None,
                 no_speech_threshold=0.6,
             )
+            if not is_en_only:
+                if language and language != "auto":
+                    transcribe_kwargs["language"] = language
+                transcribe_kwargs["task"] = "transcribe"
+            segments, _info = model.transcribe(audio, **transcribe_kwargs)
             text = " ".join(s.text.strip() for s in segments)
             decode_ms = (time.perf_counter() - t0) * 1000.0
         return Result(clean_text(text), decode_ms, audio_s, model_name, device)

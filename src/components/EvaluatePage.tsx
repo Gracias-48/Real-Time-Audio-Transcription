@@ -148,10 +148,11 @@ export const EvaluatePage: React.FC = () => {
       }
 
       // Run through actual ASREngine
+      const targetLang = datasetType === 'cv' && cvSamples[selectedCvIndex]?.language ? cvSamples[selectedCvIndex].language : settings.language
       const engine =
         settings.engine === 'python'
           ? new PythonServerEngine(settings.serverUrl, settings.pythonModel)
-          : new BrowserWhisperEngine(settings.browserModel, settings.device)
+          : new BrowserWhisperEngine(settings.browserModel, settings.device, targetLang)
 
       setStatusText(`Loading engine (${engine.label})...`)
       await engine.load(() => {})

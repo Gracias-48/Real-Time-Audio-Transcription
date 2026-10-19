@@ -7,7 +7,7 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
-  const { status, statusMessage, latencyMs, rtf, engineDevice, settings } = useAppStore()
+  const { status, statusMessage, latencyMs, rtf, engineDevice, settings, updateSettings } = useAppStore()
   const location = useLocation()
   const isEvaluatePage = location.pathname === '/evaluate'
 
@@ -31,9 +31,23 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
         <span className="text-[15px] font-semibold tracking-wide text-slate-100 select-none">
           {statusMessage || 'Ready — Click Start to transcribe'}
         </span>
-        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60">
-          {settings.engine === 'browser' ? `Browser ${settings.browserModel} (${engineDevice})` : `Python ${settings.pythonModel} (${engineDevice})`}
-        </span>
+        <div className="hidden sm:inline-flex items-center gap-1.5">
+          <span className="items-center px-2 py-0.5 rounded text-[11px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60">
+            {settings.engine === 'browser' ? `Browser ${settings.browserModel} (${engineDevice})` : `Python ${settings.pythonModel} (${engineDevice})`}
+          </span>
+          <button
+            onClick={() => {
+              const next = settings.language === 'id' ? 'en' : settings.language === 'en' ? 'auto' : 'id'
+              updateSettings({ language: next })
+            }}
+            title="Click to switch language between Indonesian (ID), English (EN), and Auto"
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 transition-colors cursor-pointer"
+          >
+            {settings.language === 'id' && '🇮🇩 ID'}
+            {settings.language === 'en' && '🇺🇸 EN'}
+            {settings.language === 'auto' && '🌐 AUTO'}
+          </button>
+        </div>
       </div>
 
       {/* Right: Metrics & Quick Nav */}

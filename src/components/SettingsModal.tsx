@@ -92,6 +92,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </div>
           </div>
 
+          {/* Spoken Language Choice */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+              Spoken Language
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => updateSettings({ language: 'id' })}
+                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  settings.language === 'id'
+                    ? 'bg-blue-950/80 border-blue-500 text-blue-200 ring-1 ring-blue-500/50'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                🇮🇩 Indonesian (id)
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSettings({ language: 'en' })}
+                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  settings.language === 'en'
+                    ? 'bg-blue-950/80 border-blue-500 text-blue-200 ring-1 ring-blue-500/50'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                🇺🇸 English (en)
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSettings({ language: 'auto' })}
+                className={`py-2 px-3 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                  settings.language === 'auto'
+                    ? 'bg-blue-950/80 border-blue-500 text-blue-200 ring-1 ring-blue-500/50'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              >
+                🌐 Auto-Detect
+              </button>
+            </div>
+          </div>
+
           {/* Browser engine options */}
           {settings.engine === 'browser' && (
             <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
@@ -102,8 +144,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   onChange={(e) => updateSettings({ browserModel: e.target.value as BrowserModel })}
                   className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="tiny.en">whisper-tiny.en (Fastest, ~39MB, Recommended)</option>
-                  <option value="base.en">whisper-base.en (Higher Accuracy, ~74MB)</option>
+                  <option value="tiny">whisper-tiny (Multilingual: Indonesian, English, etc.)</option>
+                  <option value="base">whisper-base (Multilingual: Higher Accuracy)</option>
+                  <option value="tiny.en">whisper-tiny.en (English-only)</option>
+                  <option value="base.en">whisper-base.en (English-only)</option>
                 </select>
               </div>
 
@@ -132,9 +176,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   onChange={(e) => updateSettings({ pythonModel: e.target.value as PythonModel })}
                   className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
                 >
-                  <option value="tiny.en">tiny.en (Ultra low latency)</option>
-                  <option value="base.en">base.en (Balanced)</option>
-                  <option value="small.en">small.en (High accuracy)</option>
+                  <option value="tiny">tiny (Multilingual: Indonesian, English)</option>
+                  <option value="base">base (Multilingual: Balanced)</option>
+                  <option value="small">small (Multilingual: High accuracy)</option>
+                  <option value="tiny.en">tiny.en (English-only)</option>
+                  <option value="base.en">base.en (English-only)</option>
+                  <option value="small.en">small.en (English-only)</option>
                 </select>
               </div>
 
