@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Sentence, UtteranceMetric, Settings, AppStatus } from './types'
 
 const SETTINGS_STORAGE_KEY = 'lecture_transcriber_settings_v1'
-const TRANSCRIPT_STORAGE_KEY = 'lecture_transcriber_session_v1'
+const TRANSCRIPT_STORAGE_KEY = 'lecture_transcriber_session_v2'
 
 const DEFAULT_SETTINGS: Settings = {
   engine: 'browser',
@@ -91,10 +91,25 @@ function loadPersistedSettings(): Settings {
 
 function loadPersistedSentences(): Sentence[] {
   try {
+    // Purge old v1 storage if still present
+    localStorage.removeItem('lecture_transcriber_session_v1')
+
     const raw = localStorage.getItem(TRANSCRIPT_STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const isMock = parsed.some(
+          (s: any) =>
+            s.id === 's-1' ||
+            s.id === 's-2' ||
+            (typeof s.text === 'string' && s.text.includes('cognitive overload'))
+        )
+        if (isMock) {
+          localStorage.removeItem(TRANSCRIPT_STORAGE_KEY)
+          return []
+        }
+        return parsed
+      }
     }
   } catch (e) {
     console.warn('Failed to parse saved session:', e)

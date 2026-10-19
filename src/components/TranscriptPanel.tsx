@@ -3,7 +3,7 @@ import { useAppStore } from '../lib/store'
 import { formatTimestamp } from '../lib/text'
 
 export const TranscriptPanel: React.FC = () => {
-  const { sentences, toggleHighlight, settings } = useAppStore()
+  const { sentences, toggleHighlight, settings, resetSession } = useAppStore()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false)
 
@@ -38,9 +38,24 @@ export const TranscriptPanel: React.FC = () => {
         <h2 className="text-[13px] font-bold tracking-wider text-slate-100 uppercase">
           Full Auto-Saved Transcript
         </h2>
-        <span className="text-xs text-slate-400 font-mono">
-          {sentences.length} {sentences.length === 1 ? 'sentence' : 'sentences'}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400 font-mono">
+            {sentences.length} {sentences.length === 1 ? 'sentence' : 'sentences'}
+          </span>
+          {sentences.length > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm('Clear all transcribed sentences and highlighted notes?')) {
+                  resetSession()
+                }
+              }}
+              title="Clear transcript"
+              className="text-[11px] font-medium text-slate-400 hover:text-rose-400 px-2 py-0.5 rounded bg-slate-800/80 hover:bg-rose-950/40 border border-slate-700/60 hover:border-rose-800/60 transition-colors cursor-pointer"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Scrollable Sentence List */}

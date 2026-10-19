@@ -47,9 +47,14 @@ self.onmessage = async (e: MessageEvent) => {
             status: `Loading ${model} on ${dev.toUpperCase()}...`,
           })
 
+          const dtype: any =
+            dev === 'webgpu'
+              ? { encoder_model: 'fp32', decoder_model_merged: 'q4' }
+              : 'q8'
+
           transcriber = await pipeline('automatic-speech-recognition', modelId, {
             device: dev,
-            dtype: dev === 'webgpu' ? 'fp32' : 'q8',
+            dtype,
             progress_callback: (info: any) => {
               if (info.status === 'progress' && typeof info.progress === 'number') {
                 const scaled = Math.min(95, Math.round(25 + (info.progress * 0.7)))
@@ -63,11 +68,19 @@ self.onmessage = async (e: MessageEvent) => {
             },
           })
 
+          // Warmup decode to verify that runtime inference actually works on this device
+          console.log(`[ASR Worker] Verifying warmup inference on ${dev}...`)
+          await transcriber(new Float32Array(16000), {
+            language: 'en',
+            task: 'transcribe',
+          })
+          console.log(`[ASR Worker] Warmup inference succeeded on ${dev}!`)
+
           activeDevice = dev
           currentModel = model
           break
         } catch (err: any) {
-          console.warn(`Failed loading model on ${dev}:`, err)
+          console.warn(`Failed loading/running model on ${dev}:`, err)
           lastError = err
         }
       }
@@ -93,6 +106,17 @@ self.onmessage = async (e: MessageEvent) => {
 
     const { audio, final, prompt } = data
     try {
+      if (!audio || audio.length < 800) {
+        self.postMessage({
+          type: 'transcribe_result',
+          id,
+          text: '',
+          ms: 0,
+          final,
+        })
+        return
+      }
+
       const t0 = performance.now()
       const output = await transcriber(audio, {
         language: 'en',
@@ -105,6 +129,7 @@ self.onmessage = async (e: MessageEvent) => {
       const rawText = typeof output === 'string' ? output : (output?.text || '')
       const cleaned = cleanWhisperText(rawText)
       const decodeMs = Math.round(performance.now() - t0)
+      console.log(`[ASR Worker] Decoded ${audio.length} samples in ${decodeMs}ms (${final ? 'final' : 'partial'}): "${rawText}" -> "${cleaned}"`)
 
       self.postMessage({
         type: 'transcribe_result',
@@ -114,6 +139,7 @@ self.onmessage = async (e: MessageEvent) => {
         final,
       })
     } catch (err: any) {
+      console.error('[ASR Worker] Transcribe error:', err)
       self.postMessage({ type: 'error', id, message: err?.message || String(err) })
     }
   }

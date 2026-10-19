@@ -177,7 +177,7 @@ export class TranscriptionPipeline {
         at: Date.now(),
       }
       useAppStore.getState().recordMetric(metric)
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Partial decode error:', e)
     } finally {
       this.isDecoding = false
@@ -221,8 +221,9 @@ export class TranscriptionPipeline {
         at: Date.now(),
       }
       useAppStore.getState().recordMetric(metric)
-    } catch (e) {
-      console.warn('Final decode error:', e)
+    } catch (e: any) {
+      console.error('Final decode error:', e)
+      useAppStore.getState().setStatus('error', `Decode error: ${e?.message || e}`)
     } finally {
       this.isDecoding = false
       this.utteranceChunks = []
