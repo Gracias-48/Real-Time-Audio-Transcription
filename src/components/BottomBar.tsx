@@ -14,19 +14,18 @@ export const BottomBar: React.FC<BottomBarProps> = ({ onStart, onStop, onExport 
   const isBusy = isListening || isLoading
 
   return (
-    <footer className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-4 border-t border-[#1b263b] bg-[#0c1322]/90 backdrop-blur-md rounded-b-2xl">
-      {/* Left: Audio & Session Status (Transcriptions stream directly above in the transcript panel) */}
-      <div className="flex items-center gap-3.5 min-w-0">
+    <footer className="fixed bottom-0 left-0 lg:left-72 right-0 h-16 bg-surface-container-lowest z-30 flex items-center justify-between px-space-md border-t border-[#262626]">
+      {/* Left: Audio & Session Status */}
+      <div className="flex items-center gap-space-md min-w-0">
         {isLoading ? (
-          <div className="flex items-center gap-2.5 text-blue-300 text-xs">
-            <svg className="w-4 h-4 animate-spin text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            <span className="font-medium">
+          <div className="flex items-center gap-2 text-primary font-mono text-xs">
+            <span className="material-symbols-outlined text-[18px] animate-spin">
+              progress_activity
+            </span>
+            <span className="truncate">
               {downloadProgress !== null
-                ? `Mengunduh model Whisper AI (${downloadProgress}%)...`
-                : 'Menginisialisasi mikrofon & model lokal...'}
+                ? `Loading Whisper model (${downloadProgress}%)...`
+                : 'Initializing microphone & local engine...'}
             </span>
           </div>
         ) : isListening ? (
@@ -34,17 +33,17 @@ export const BottomBar: React.FC<BottomBarProps> = ({ onStart, onStop, onExport 
             {/* Animated Audio Wave Indicator */}
             <div className="flex items-end gap-1 h-4 shrink-0">
               <span
-                className={`w-1 rounded-full bg-blue-400 transition-all ${
+                className={`w-1 bg-primary transition-all ${
                   isSpeaking ? 'h-4 animate-bounce' : 'h-1.5 opacity-40'
                 }`}
               />
               <span
-                className={`w-1 rounded-full bg-blue-500 transition-all ${
+                className={`w-1 bg-primary-container transition-all ${
                   isSpeaking ? 'h-5 animate-bounce [animation-delay:0.15s]' : 'h-2.5 opacity-60'
                 }`}
               />
               <span
-                className={`w-1 rounded-full bg-blue-400 transition-all ${
+                className={`w-1 bg-primary transition-all ${
                   isSpeaking ? 'h-3.5 animate-bounce [animation-delay:0.3s]' : 'h-1.5 opacity-40'
                 }`}
               />
@@ -52,61 +51,69 @@ export const BottomBar: React.FC<BottomBarProps> = ({ onStart, onStop, onExport 
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-200">
-                  {isSpeaking ? '🎙️ Terdeteksi Suara' : 'Mikrofon Siaga (Standby)'}
+                <span className="font-mono text-xs font-bold text-on-surface">
+                  {isSpeaking ? '🎙️ SPEECH DETECTED' : 'MICROPHONE STANDBY'}
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-blue-950/80 text-blue-300 border border-blue-800/80">
-                  LIVE IN TRANSCRIPT
+                <span className="font-mono text-[10px] px-1.5 py-0.2 bg-tertiary-container/30 text-tertiary font-semibold hidden sm:inline">
+                  16kHz VAD STREAMING
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 truncate">
+              <p className="font-mono text-[11px] text-outline truncate">
                 {isSpeaking
-                  ? 'Kata-kata langsung muncul dan diketik pada baris transkrip di atas.'
-                  : 'Berbicaralah ke mikrofon, transkripsi real-time langsung aktif.'}
+                  ? 'Transcribing directly into live transcript feed above.'
+                  : 'Speak into microphone to transcribe in real-time.'}
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-slate-400 text-xs">
-            <span className="inline-block w-2 h-2 rounded-full bg-slate-500 shrink-0" />
+          <div className="flex items-center gap-2 text-outline font-mono text-xs">
+            <span className="w-2 h-2 rounded-full bg-outline shrink-0" />
             <span>
-              Tekan <strong className="text-slate-300 font-medium">Start</strong> untuk memulai transkripsi langsung di panel atas.
+              Engine Ready · Press <strong className="text-on-surface font-semibold">Start Recording</strong> to stream.
             </span>
           </div>
         )}
       </div>
 
-      {/* Right: Controls (Start, Stop, Export) */}
-      <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+      {/* Right: Controller Buttons */}
+      <div className="flex items-center gap-space-xs shrink-0">
         <button
           onClick={onStart}
           disabled={isBusy}
-          className={`px-7 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer shadow-md ${
+          className={`h-10 px-space-md font-mono text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
             isBusy
-              ? 'bg-blue-600/40 text-blue-200 cursor-not-allowed opacity-60'
-              : 'bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-98'
+              ? 'bg-primary-container/30 text-on-primary-container/40 cursor-not-allowed'
+              : 'bg-primary-container text-on-primary-container hover:bg-inverse-primary'
           }`}
+          type="button"
         >
-          {isLoading ? 'Starting...' : 'Start'}
+          <span className="material-symbols-outlined text-[18px]">
+            {isLoading ? 'hourglass_top' : 'mic'}
+          </span>
+          <span>{isLoading ? 'Starting...' : 'Start Recording'}</span>
         </button>
 
         <button
           onClick={onStop}
           disabled={status === 'idle'}
-          className={`px-7 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 border cursor-pointer ${
+          className={`h-10 px-space-md font-mono text-xs transition-colors flex items-center gap-1.5 cursor-pointer border ${
             status === 'idle'
-              ? 'bg-[#151d2d] text-slate-500 border-slate-800/80 cursor-not-allowed'
-              : 'bg-[#182235] hover:bg-[#22314d] text-slate-200 border-[#2b3c5e] active:scale-98'
+              ? 'bg-surface-container text-outline border-[#2e2e2e] cursor-not-allowed'
+              : 'bg-surface-container-high hover:bg-surface-bright text-on-surface border-[#424656]'
           }`}
+          type="button"
         >
-          Stop
+          <span className="material-symbols-outlined text-[18px]">stop</span>
+          <span>Stop</span>
         </button>
 
         <button
           onClick={onExport}
-          className="px-7 py-2.5 rounded-xl font-medium text-sm bg-[#182235] hover:bg-[#22314d] text-slate-200 border border-[#2b3c5e] transition-all duration-200 active:scale-98 cursor-pointer shadow-sm"
+          className="h-10 px-space-md bg-surface-container hover:bg-surface-container-high text-on-surface font-mono text-xs transition-colors hidden sm:flex items-center gap-1.5 cursor-pointer border border-[#2e2e2e]"
+          type="button"
         >
-          Export
+          <span className="material-symbols-outlined text-[18px]">file_download</span>
+          <span>Export</span>
         </button>
       </div>
     </footer>

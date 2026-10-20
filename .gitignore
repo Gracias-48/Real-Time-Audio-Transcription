@@ -33,3 +33,5 @@ cv-corpus-*/
 *.njsproj
 *.sln
 *.sw?
+docx_full_text.txt
+

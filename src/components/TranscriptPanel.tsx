@@ -12,10 +12,20 @@ export const TranscriptPanel: React.FC = () => {
     isSpeaking,
     status,
     currentUtteranceStartMs,
+    filterQuery,
+    setFilterQuery,
   } = useAppStore()
+
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false)
   const isListening = status === 'listening'
+
+  // Filter sentences by search query
+  const filteredSentences = sentences.filter((s) =>
+    filterQuery.trim() === ''
+      ? true
+      : s.text.toLowerCase().includes(filterQuery.toLowerCase())
+  )
 
   // Auto-scroll to newest sentence / live typing row unless user has scrolled up
   useEffect(() => {
@@ -29,7 +39,7 @@ export const TranscriptPanel: React.FC = () => {
   const handleScroll = () => {
     const el = scrollContainerRef.current
     if (!el) return
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50
     setUserHasScrolledUp(!isAtBottom)
   }
 
@@ -50,63 +60,110 @@ export const TranscriptPanel: React.FC = () => {
         : 0
 
   return (
-    <div className="flex flex-col flex-1 min-h-[380px] h-[520px] bg-[#0c1322]/50 border-r border-[#1b263b] relative">
-      {/* Panel Header */}
-      <div className="flex items-center justify-between px-6 py-3.5 border-b border-[#1b263b]/70 bg-[#0c1322]/60">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[13px] font-bold tracking-wider text-slate-100 uppercase">
-            Full Auto-Saved Transcript
-          </h2>
-          {isListening && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 animate-pulse">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-              LIVE
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400 font-mono">
-            {sentences.length} {sentences.length === 1 ? 'sentence' : 'sentences'}
+    <section
+      aria-label="Real-time Lecture Transcription"
+      className="flex flex-col h-full bg-surface-container-lowest relative overflow-hidden border-r border-[#262626]"
+    >
+      {/* Panel Header Toolbar */}
+      <div className="px-space-md py-space-sm bg-surface-container-low flex flex-wrap items-center justify-between gap-space-sm select-none border-b border-[#262626]">
+        <div className="flex items-center gap-space-sm">
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2.5 h-2.5 ${
+                isListening ? 'bg-primary animate-pulse' : 'bg-outline'
+              }`}
+            />
+            <h2 className="font-sans text-sm font-semibold tracking-tight text-on-surface">
+              Live Lecture Feed
+            </h2>
+          </div>
+          <span className="font-mono text-xs px-2 py-0.5 bg-surface-container-high text-primary font-medium tracking-wide">
+            <span id="sentence-counter">{sentences.length}</span> SENTENCES
           </span>
+          <span className="font-mono text-[11px] px-2 py-0.5 bg-tertiary-container/20 text-tertiary uppercase hidden sm:inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span> ASR 16kHz VAD
+          </span>
+        </div>
+
+        <div className="flex items-center gap-space-xs">
+          {/* Quick Filter Search Input */}
+          <div className="relative flex items-center bg-surface-container px-2 py-1 border border-[#353534]">
+            <span className="material-symbols-outlined text-[16px] text-outline mr-1">search</span>
+            <input
+              type="text"
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              placeholder="Filter speech stream..."
+              className="bg-transparent text-on-surface text-xs focus:outline-none w-28 sm:w-44 placeholder:text-outline font-sans"
+            />
+            {filterQuery && (
+              <button
+                onClick={() => setFilterQuery('')}
+                className="text-outline hover:text-on-surface text-xs ml-1"
+                type="button"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Clear Feed Button */}
           {sentences.length > 0 && (
             <button
               onClick={() => {
-                if (window.confirm('Clear all transcribed sentences and highlighted notes?')) {
+                if (window.confirm('Reset and clear entire lecture transcript session?')) {
                   resetSession()
                 }
               }}
-              title="Clear transcript"
-              className="text-[11px] font-medium text-slate-400 hover:text-rose-400 px-2 py-0.5 rounded bg-slate-800/80 hover:bg-rose-950/40 border border-slate-700/60 hover:border-rose-800/60 transition-colors cursor-pointer"
+              title="Reset active feed display"
+              className="px-space-sm py-1 font-mono text-[11px] text-on-surface-variant hover:text-error hover:bg-surface-container-high transition-colors flex items-center gap-1 cursor-pointer"
+              type="button"
             >
-              Clear
+              <span className="material-symbols-outlined text-[15px]">delete_sweep</span>
+              <span className="hidden md:inline">Clear Feed</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Scrollable Sentence List */}
+      {/* Feed Context Sub-banner */}
+      <div className="px-space-md py-1.5 bg-surface-container flex items-center justify-between text-outline font-mono text-[11px] border-b border-[#262626]">
+        <div className="flex items-center gap-2 truncate">
+          <span className="text-secondary font-medium">COMP6822001</span>
+          <span className="truncate">// Speech Recognition · Real-Time Lecture Transcriber</span>
+        </div>
+        <div className="flex items-center gap-space-sm shrink-0 font-mono">
+          <span className="text-tertiary">GPU SRAM: 18.2MB Cache</span>
+          <span className="text-outline-variant">|</span>
+          <span>Model: {settings.browserModel}</span>
+        </div>
+      </div>
+
+      {/* Scrollable Transcript Feed */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5 focus:outline-none"
+        id="transcript-scroll-area"
+        className="flex-1 overflow-y-auto px-space-md py-space-md space-y-2 relative scroll-smooth focus:outline-none"
         tabIndex={0}
-        aria-label="Transcribed sentences list"
       >
-        {sentences.length === 0 && !isListening ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 text-center px-4">
-            <svg className="w-8 h-8 text-slate-500 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-            </svg>
-            <p className="text-sm font-medium text-slate-300">Transcript is empty</p>
-            <p className="text-xs text-slate-400">Click &ldquo;Start&rdquo; and speak into your microphone to transcribe in real-time.</p>
+        {filteredSentences.length === 0 && !isListening ? (
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-2 text-center px-4 select-none">
+            <span className="material-symbols-outlined text-[36px] text-outline opacity-60">
+              mic_none
+            </span>
+            <p className="text-sm font-semibold text-on-surface">Transcript Feed is Empty</p>
+            <p className="text-xs text-outline max-w-sm">
+              Click &ldquo;Start Recording&rdquo; in the controller bar below to begin live speech recognition.
+            </p>
           </div>
         ) : (
           <>
-            {sentences.map((s) => {
-              const isHighlighted = s.highlighted
+            {filteredSentences.map((s) => {
+              const isStarred = s.highlighted
 
               return (
-                <div
+                <article
                   key={s.id}
                   id={`sentence-${s.id}`}
                   onClick={() => toggleHighlight(s.id)}
@@ -118,79 +175,130 @@ export const TranscriptPanel: React.FC = () => {
                   }}
                   tabIndex={0}
                   role="button"
-                  aria-pressed={isHighlighted}
-                  title={isHighlighted ? 'Click to un-highlight' : '1-Click to highlight key takeaway'}
-                  className={`group flex items-start gap-3.5 px-3.5 py-2.5 rounded-xl transition-all duration-200 cursor-pointer select-none border ${
-                    isHighlighted
-                      ? 'bg-[#372a0f]/80 hover:bg-[#433313] border-[#ca8a04]/80 text-amber-100 shadow-[0_0_15px_rgba(202,138,4,0.15)] ring-1 ring-amber-500/30'
-                      : 'bg-transparent hover:bg-slate-800/40 border-transparent text-slate-200'
+                  aria-pressed={isStarred}
+                  title={isStarred ? 'Remove star' : 'Star & extract to notes'}
+                  className={`transcript-row group flex items-start gap-space-sm p-space-sm transition-all cursor-pointer relative select-text border border-transparent ${
+                    isStarred
+                      ? 'is-starred bg-secondary/15 hover:bg-secondary/20 shadow-xs'
+                      : 'bg-surface-container-low hover:bg-surface-container'
                   }`}
                 >
-                  {/* Timestamp & Star badge */}
-                  <div className="flex items-center gap-1.5 font-mono text-[13px] shrink-0 pt-0.5">
-                    {isHighlighted ? (
-                      <span className="text-amber-400 text-sm leading-none drop-shadow">⭐</span>
-                    ) : (
-                      <span className="text-slate-500 text-sm leading-none opacity-0 group-hover:opacity-60 transition-opacity">
-                        ☆
-                      </span>
-                    )}
+                  {/* Left Highlight Yellow Accent Bar */}
+                  {isStarred && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-secondary" />
+                  )}
+
+                  {/* Star Trigger Button */}
+                  <button
+                    className={`star-trigger shrink-0 pt-0.5 hover:scale-110 transition-transform cursor-pointer ${
+                      isStarred ? 'text-secondary' : 'text-outline group-hover:text-secondary'
+                    }`}
+                    type="button"
+                  >
                     <span
-                      className={
-                        isHighlighted
-                          ? 'text-amber-300 font-semibold'
-                          : 'text-slate-400 group-hover:text-slate-300 font-medium'
-                      }
+                      className="material-symbols-outlined text-[18px]"
+                      style={{ fontVariationSettings: isStarred ? "'FILL' 1" : "'FILL' 0" }}
                     >
-                      {formatTimestamp(s.startMs)}
+                      {isStarred ? 'star' : 'star_outline'}
                     </span>
-                    <span className="text-slate-600 font-light">|</span>
+                  </button>
+
+                  {/* Monospace Timestamp */}
+                  <span
+                    className={`font-mono text-xs shrink-0 pt-0.5 select-none ${
+                      isStarred ? 'text-secondary font-semibold' : 'text-outline group-hover:text-primary'
+                    }`}
+                  >
+                    [{formatTimestamp(s.startMs)}]
+                  </span>
+
+                  {/* Sentence Body */}
+                  <div className="flex-1 min-w-0">
+                    {isStarred && (
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-[10px] bg-secondary text-on-secondary px-1.5 py-0.2 font-bold tracking-wider uppercase">
+                          Keypoint
+                        </span>
+                        <span className="font-mono text-[11px] text-secondary-fixed">
+                          Takeaway #{s.id.slice(-4)}
+                        </span>
+                      </div>
+                    )}
+                    <p
+                      className={`text-sm leading-relaxed ${
+                        isStarred ? 'text-on-surface font-medium' : 'text-on-surface'
+                      }`}
+                    >
+                      {s.text}
+                    </p>
                   </div>
 
-                  {/* Sentence text */}
-                  <p className={`text-[14px] leading-relaxed flex-1 ${isHighlighted ? 'font-medium text-amber-50' : 'text-slate-100'}`}>
-                    {s.text}
-                  </p>
-                </div>
+                  <span
+                    className={`font-mono text-[11px] shrink-0 ${
+                      isStarred
+                        ? 'text-secondary font-semibold'
+                        : 'text-outline opacity-0 group-hover:opacity-100 transition-opacity'
+                    }`}
+                  >
+                    {isStarred ? 'STARRED' : 'Click to star'}
+                  </span>
+                </article>
               )
             })}
 
-            {/* Active Live Streaming Row: words appear directly in the transcript as you speak */}
+            {/* In-Line Live Captioning Row (Active Streaming) */}
             {isListening && (
               <div
-                className="flex items-start gap-3.5 px-3.5 py-2.5 rounded-xl border border-blue-500/40 bg-blue-950/25 text-blue-100 shadow-[0_0_20px_rgba(59,130,246,0.12)] transition-all duration-150 animate-fade-in"
-                aria-live="polite"
+                id="live-caption-container"
+                className="mt-4 p-space-sm bg-surface-container-high transition-all border border-primary/30 shadow-xs"
               >
-                {/* Live timestamp and indicator */}
-                <div className="flex items-center gap-1.5 font-mono text-[13px] shrink-0 pt-0.5">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-                  </span>
-                  <span className="text-blue-400 font-semibold">
-                    {formatTimestamp(liveTimestampMs)}
-                  </span>
-                  <span className="text-blue-600 font-light">|</span>
+                {/* Header Strip */}
+                <div className="flex items-center justify-between mb-2 pb-1.5 bg-surface-container-highest/60 px-2 py-1">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    </span>
+                    <span className="font-mono text-[11px] uppercase font-semibold text-primary tracking-wider">
+                      [LIVE STREAMING]
+                    </span>
+                    <span className="font-mono text-[11px] text-outline ml-2 font-medium hidden sm:inline">
+                      AUDIO CH: 01 (16kHz VAD)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] text-tertiary">
+                      {isSpeaking ? 'Voice Active' : 'Waiting...'}
+                    </span>
+                    <span className="font-mono text-[11px] text-outline">
+                      [{formatTimestamp(liveTimestampMs)}]
+                    </span>
+                  </div>
                 </div>
 
-                {/* Live streaming text: rendered directly in real-time */}
-                <div className="text-[14px] leading-relaxed flex-1 min-w-0">
-                  {partialText ? (
-                    <span className="text-blue-100 font-medium select-text">
-                      {partialText}
-                      <span className="inline-block w-1.5 h-4 ml-1.5 bg-blue-400 rounded-sm animate-pulse align-middle" />
-                    </span>
-                  ) : isSpeaking ? (
-                    <span className="text-amber-300/90 italic font-normal flex items-center gap-2 animate-pulse">
-                      <span className="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
-                      <span>Mendengarkan ucapan...</span>
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 italic text-xs flex items-center gap-2">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span>Mikrofon aktif — silakan berbicara, teks langsung diketik di sini...</span>
-                    </span>
-                  )}
+                {/* Live Text Body */}
+                <div className="flex items-start gap-space-sm pl-1">
+                  <span className="font-mono text-sm text-primary font-bold pt-0.5 select-none">
+                    &gt;&gt;
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-on-surface leading-relaxed font-normal">
+                      {partialText ? (
+                        <>
+                          <span>{partialText}</span>
+                          <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse align-middle" />
+                        </>
+                      ) : isSpeaking ? (
+                        <span className="text-secondary italic flex items-center gap-1.5">
+                          <span>Mendengarkan ucapan...</span>
+                        </span>
+                      ) : (
+                        <span className="text-outline italic text-xs">
+                          Mikrofon aktif — silakan berbicara, transkripsi real-time langsung diketik di sini...
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
@@ -198,15 +306,54 @@ export const TranscriptPanel: React.FC = () => {
         )}
       </div>
 
-      {/* Resume auto-scroll button if user scrolled up */}
+      {/* Floating Auto-Scroll Status Indicator */}
       {userHasScrolledUp && (
-        <button
-          onClick={handleResumeAutoScroll}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-600/90 hover:bg-blue-500 text-white text-xs font-medium rounded-full shadow-lg backdrop-blur-sm border border-blue-400/40 transition-all cursor-pointer flex items-center gap-1.5"
-        >
-          <span>↓ Resume auto-scroll</span>
-        </button>
+        <div className="absolute bottom-10 right-4 z-20 flex items-center gap-2">
+          <button
+            onClick={handleResumeAutoScroll}
+            className="px-space-sm py-1.5 bg-surface-container-highest hover:bg-surface-bright text-on-surface font-mono text-xs flex items-center gap-1.5 shadow-md transition-colors cursor-pointer border border-[#424656]"
+            id="autoscroll-toggle-btn"
+            type="button"
+          >
+            <span className="material-symbols-outlined text-[16px] text-secondary">
+              arrow_downward
+            </span>
+            <span>Resume Auto-Scroll</span>
+          </button>
+        </div>
       )}
-    </div>
+
+      {/* Bottom Audio Telemetry Sparkline Strip */}
+      <div className="px-space-md py-1.5 bg-surface-container-low flex items-center justify-between text-outline font-mono text-[11px] select-none border-t border-[#262626]">
+        <div className="flex items-center gap-3">
+          <span className="text-on-surface-variant font-medium">Acoustic Signal:</span>
+          {/* Mini Waveform visualization */}
+          <svg className="h-3 w-28 text-primary" fill="none" preserveAspectRatio="none" viewBox="0 0 100 12">
+            <path
+              d={
+                isSpeaking
+                  ? 'M0 6 L8 6 L12 1 L16 11 L20 2 L24 10 L28 0 L32 12 L36 3 L40 9 L44 0 L48 12 L52 2 L56 10 L60 4 L64 8 L68 2 L72 10 L76 5 L80 7 L84 3 L88 9 L92 6 L100 6'
+                  : 'M0 6 L100 6'
+              }
+              stroke="currentColor"
+              strokeLinecap="square"
+              strokeWidth="1.5"
+            />
+          </svg>
+          <span className="text-tertiary font-mono">
+            {isSpeaking ? '-18.4 dBFS' : '-48.0 dBFS'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>
+            Status: <strong className="text-on-surface">{isListening ? 'Streaming' : 'Standby'}</strong>
+          </span>
+          <span className="text-outline-variant">·</span>
+          <span>
+            Sample Rate: <strong>16,000 Hz</strong>
+          </span>
+        </div>
+      </div>
+    </section>
   )
 }

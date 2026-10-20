@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"inverse-primary":"#0052dd","error-container":"#93000a","secondary-fixed":"#ffe08b","surface-container-highest":"#353534","on-tertiary-fixed":"#002108","surface-bright":"#393939","on-surface-variant":"#c3c6d8","error":"#ffb4ab","surface-container":"#201f1f","surface-container-high":"#2a2a2a","inverse-on-surface":"#313030","tertiary-container":"#198038","on-tertiary":"#003913","surface-container-low":"#1c1b1b","on-primary-fixed-variant":"#003da9","secondary-fixed-dim":"#f0c119","tertiary-fixed-dim":"#7bdb87","on-tertiary-fixed-variant":"#00531e","tertiary-fixed":"#96f8a1","primary-container":"#0f62fe","on-error":"#690005","on-error-container":"#ffdad6","surface":"#131313","on-secondary-fixed-variant":"#584400","on-surface":"#e5e2e1","surface-variant":"#353534","on-secondary-container":"#5d4900","tertiary":"#7bdb87","surface-container-lowest":"#0e0e0e","outline":"#8c90a2","primary-fixed-dim":"#b4c5ff","on-secondary-fixed":"#241a00","surface-dim":"#131313","secondary-container":"#e4b601","surface-tint":"#b4c5ff","primary":"#b4c5ff","outline-variant":"#424656","background":"#131313","primary-fixed":"#dbe1ff","on-background":"#e5e2e1","on-tertiary-container":"#d4ffd2","on-primary-container":"#f3f3ff","on-primary":"#002979","inverse-surface":"#e5e2e1","secondary":"#ffd247","on-secondary":"#3d2f00","on-primary-fixed":"#00174c"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-md":"1rem","margin":"1rem","gutter":"1rem","space-lg":"1.5rem","margin-desktop":"2rem","gutter-desktop":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","space-xl":"2.5rem"},"fontFamily":{"code-sm":["JetBrains Mono"],"label-md":["JetBrains Mono"],"body-md":["IBM Plex Sans"],"headline-sm":["IBM Plex Sans"],"body-lg":["IBM Plex Sans"],"label-sm":["JetBrains Mono"],"headline-lg-mobile":["IBM Plex Sans"],"headline-lg":["IBM Plex Sans"],"headline-md":["IBM Plex Sans"],"display":["IBM Plex Sans"],"body-sm":["IBM Plex Sans"]},"fontSize":{"code-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-md":["13px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"500"}],"body-md":["15px",{"lineHeight":"24px","fontWeight":"400"}],"headline-sm":["18px",{"lineHeight":"24px","fontWeight":"500"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"500"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.005em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","fontWeight":"500"}],"display":["42px",{"lineHeight":"50px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary min-h-screen"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-40 flex flex-col pt-16"><div class="p-space-md bg-surface-container flex items-center justify-between"><span class="font-label-sm text-label-sm uppercase text-outline tracking-wider">Navigation Index</span><span class="font-label-sm text-label-sm text-tertiary font-code-sm">SYS_ONLINE</span></div><nav class="flex-1 p-space-sm space-y-1 overflow-y-auto" data-active-classes="bg-primary-container text-on-primary-container font-medium"><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="live-session" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">record_voice_over</span>Live Transcriber</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="key-highlights" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">star</span>Starred Highlights</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="lecture-archive" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">folder_open</span>Session Archive</a><a aria-current="page" class="flex items-center px-space-md py-space-sm transition-colors bg-primary-container text-on-primary-container font-medium" data-path="evaluation-suite" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">query_stats</span>Evaluation Suite</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="acoustic-settings" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">tune</span>Acoustic Settings</a></nav><div class="p-space-md bg-surface-container-lowest space-y-2 pb-24"><div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm"><span>BUFFER MEMORY</span><span class="text-tertiary font-code-sm">18.4 MB / 1GB</span></div><div class="w-full bg-surface-container-high h-1"><div class="bg-tertiary h-1 w-[18%]"></div></div><div class="text-outline font-label-sm text-label-sm pt-1">Session ID: #LCT-2024-9980</div></div></aside><div class="pl-72"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><img alt="TranscribeNote Carbon Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XuU5HJVpHVirWkiKzxvXTvNbZbemwpF9eQSCJidTRHPfneC9QoOdnS589Wrb5G887q_5S1XwLAbGZGeh6CrVlxn-umk_ugpEEcFtHKoyn2ZyZKILzJohBjTL3R8-U_V6OeFSNaWLh-p0SB0u-5PtQLdXzO6Uzx6q1gqIbou-pFRIT4j06E5P9frJ8RKfWfxt3S5mcz8SmbMKJh994Hes5KWpI4hQOTu-427CUk-MyQsxAe-45zoVIrvZw"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface leading-none">TranscribeNote</span><span class="font-label-sm text-label-sm bg-primary-container text-on-primary-container px-1 py-0.5 uppercase tracking-wide">Carbon v1.2</span></div><span class="font-label-sm text-label-sm text-outline tracking-tight">Lecture AI · On-Device ASR</span></div></div><div class="h-6 w-px bg-surface-bright hidden xl:block"></div><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 bg-tertiary-container/20 text-tertiary font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span><span class="font-medium tracking-wide uppercase">Listening (WebGPU Local)</span></div><div class="hidden 2xl:flex items-center gap-space-xs px-space-sm py-1 bg-surface-container font-label-sm text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[14px] text-primary">memory</span><span>Browser whisper-tiny (WebGPU)</span></div><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-1 bg-surface-container font-label-sm text-label-sm text-tertiary"><span class="material-symbols-outlined text-[14px]">lock</span><span>100% On-Device / No Cloud</span></div></div><div class="flex items-center gap-space-md"><div class="hidden sm:flex items-center bg-surface-container p-0.5"><button class="px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button">🇮🇩 ID</button><button class="px-space-sm py-1 font-label-sm text-label-sm bg-primary-container text-on-primary-container font-medium" type="button">🇺🇸 EN</button><button class="px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button">🌐 Auto</button></div><div class="hidden md:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 font-code-sm text-code-sm"><div class="flex items-center gap-1"><span class="text-outline">Latency:</span><span class="text-tertiary font-medium">0.38s</span></div><span class="text-outline-variant">|</span><div class="flex items-center gap-1"><span class="text-outline">RTF:</span><span class="text-secondary font-medium">0.42x</span></div></div><div class="flex items-center gap-space-xs"><a class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1" data-path="evaluation-suite" href="#"><span class="material-symbols-outlined text-[16px]">speed</span><span class="hidden lg:inline">/evaluate</span></a><button class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1" type="button"><span class="material-symbols-outlined text-[16px]">settings</span><span class="hidden lg:inline">Settings</span></button><button class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-primary bg-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-1" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span><span class="hidden sm:inline font-medium">Export Notes</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 pb-20 w-full min-h-screen bg-surface"><div class="flex flex-col w-full">
+<!-- Subtle ambient canvas glow -->
+<div class="relative w-full overflow-hidden px-space-md lg:px-space-lg py-space-md">
+<div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
+<div class="absolute top-96 -left-32 w-80 h-80 rounded-full bg-tertiary-container/10 blur-3xl pointer-events-none"></div>
+<!-- Section: Header Bar & Suite Identifier -->
+<div class="relative flex flex-col md:flex-row md:items-end justify-between gap-space-md pb-space-md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-tertiary px-1.5 py-0.5 bg-surface-container font-medium tracking-wider uppercase">MODULE_BENCH // ASR_EVAL</span>
+<span class="text-outline-variant font-code-sm text-code-sm">::</span>
+<span class="font-code-sm text-code-sm text-outline">RFC-9125 SPEC</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-semibold flex items-center gap-3">
+          Scientific Evaluation &amp; Benchmarking
+          <span class="font-code-sm text-code-sm px-2 py-0.5 bg-surface-container-high text-on-surface-variant font-normal">v2.4-int8</span>
+</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+          On-device inference validation suite measuring Levenshtein word/character alignments, latency envelopes, and acoustic robustness across simulated reverberant lecture environments.
+        </p>
+</div>
+<!-- Suite Actions -->
+<div class="flex items-center gap-space-xs flex-wrap self-start md:self-auto">
+<button class="h-10 px-space-md bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center gap-2" id="btn-export-csv">
+<span class="material-symbols-outlined text-[18px] text-outline">table_view</span>
+          Export CSV / JSON
+        </button>
+<button class="h-10 px-space-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:bg-inverse-primary transition-colors flex items-center gap-2 shadow-sm" id="btn-run-benchmark">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+          Run Benchmark Suite
+        </button>
+</div>
+</div>
+<!-- 1. Top Section - Experiment Benchmark Parameters -->
+<div class="w-full bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-primary"></span>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider font-semibold">Parametric Configuration</span>
+</div>
+<span class="font-code-sm text-code-sm text-outline">HARDWARE_LOCK: Apple M-Series WebGPU Shaders (WGSL)</span>
+</div>
+<!-- Grid of Controls -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Dataset Selector Tabs -->
+<div class="lg:col-span-6 flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">dataset</span> Test Corpus Partition
+          </label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-1 bg-surface-container p-1">
+<button class="corpus-tab active px-3 py-2 text-left font-label-sm text-label-sm bg-primary-container text-on-primary-container font-semibold transition-all flex flex-col" data-corpus="cv-id">
+<span class="truncate">Mozilla Common Voice</span>
+<span class="text-on-primary-container/80 text-[10px] font-code-sm">ID cv-27.0 · 50 utts</span>
+</button>
+<button class="corpus-tab px-3 py-2 text-left font-label-sm text-label-sm bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all flex flex-col" data-corpus="cs50">
+<span class="truncate">CS50 Harvard Audio</span>
+<span class="text-outline text-[10px] font-code-sm">Clean 16kHz · 35 mins</span>
+</button>
+<button class="corpus-tab px-3 py-2 text-left font-label-sm text-label-sm bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all flex flex-col" data-corpus="custom">
+<span class="truncate">Custom File (.wav)</span>
+<span class="text-outline text-[10px] font-code-sm">Drop .flac / .wav</span>
+</button>
+</div>
+</div>
+<!-- Engine Toggle -->
+<div class="lg:col-span-3 flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">memory</span> Engine Benchmark Target
+          </label>
+<div class="flex flex-col gap-1.5">
+<label class="flex items-center gap-2.5 p-2 bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+<input checked="" class="w-4 h-4 text-primary-container bg-surface-container-highest focus:ring-0" name="engine" type="radio" value="webgpu"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface font-medium truncate">Whisper-Tiny (WebGPU int8)</span>
+<span class="font-code-sm text-code-sm text-tertiary">39M params · Client-side</span>
+</div>
+</label>
+<label class="flex items-center gap-2.5 p-2 bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+<input class="w-4 h-4 text-primary-container bg-surface-container-highest focus:ring-0" name="engine" type="radio" value="faster-whisper"/>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface font-medium truncate">faster-whisper-base (Ref)</span>
+<span class="font-code-sm text-code-sm text-outline">74M params · CTranslate2</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Condition Modifiers -->
+<div class="lg:col-span-3 flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">graphic_eq</span> Acoustic Environment
+          </label>
+<div class="flex flex-col gap-1.5">
+<button class="condition-chip active w-full px-3 py-1.5 bg-surface-container text-on-surface font-label-sm text-label-sm flex items-center justify-between text-left hover:bg-surface-container-high transition-colors">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-primary"></span>
+                Baseline (Clean 16kHz)
+              </span>
+<span class="font-code-sm text-code-sm text-tertiary">0.0 dB SNR</span>
+</button>
+<button class="condition-chip w-full px-3 py-1.5 bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm flex items-center justify-between text-left hover:bg-surface-container-high transition-colors">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-secondary"></span>
+                E1 (Reverb RT60 1.2s)
+              </span>
+<span class="font-code-sm text-code-sm text-secondary">+Noise 12dB</span>
+</button>
+<button class="condition-chip w-full px-3 py-1.5 bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm flex items-center justify-between text-left hover:bg-surface-container-high transition-colors">
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-error"></span>
+                E2 (Fast Speech 185 WPM)
+              </span>
+<span class="font-code-sm text-code-sm text-error">1.35x Pace</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. Metrics KPI Grid (IBM Carbon big digits + status) -->
+<div class="mt-space-md grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Card 1: WER -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-tertiary"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Word Error Rate (WER)</span>
+<span class="font-code-sm text-code-sm text-tertiary px-1 bg-tertiary-container/30 font-semibold">GOOD (-1.4%)</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-code-sm text-[44px] font-semibold text-tertiary leading-none">8.4<span class="text-2xl text-tertiary/70">%</span></span>
+<span class="font-label-sm text-label-sm text-outline">Target &lt; 10.0%</span>
+</div>
+<div class="flex items-center justify-between pt-2 bg-surface-container-lowest px-2 py-1.5">
+<span class="font-label-sm text-label-sm text-outline">Deletions: 2.1%</span>
+<span class="font-label-sm text-label-sm text-outline">Subs: 5.3%</span>
+<span class="font-label-sm text-label-sm text-outline">Ins: 1.0%</span>
+</div>
+</div>
+<!-- Card 2: CER -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Char Error Rate (CER)</span>
+<span class="font-code-sm text-code-sm text-primary px-1 bg-primary-container/20">CONF: 0.94</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-code-sm text-[44px] font-semibold text-primary leading-none">3.2<span class="text-2xl text-primary/70">%</span></span>
+<span class="font-label-sm text-label-sm text-outline">N=4,812 tokens</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 overflow-hidden">
+<div class="bg-primary h-full" style="width: 96.8%"></div>
+</div>
+</div>
+<!-- Card 3: Real-Time Factor (RTF) -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-secondary"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Real-Time Factor (RTF)</span>
+<span class="font-code-sm text-code-sm text-secondary px-1 bg-secondary-container/20 font-semibold">2.6x Real-time</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-code-sm text-[44px] font-semibold text-secondary leading-none">0.38<span class="text-2xl text-secondary/70">x</span></span>
+<span class="font-label-sm text-label-sm text-outline">Bench target &lt; 1.0x</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-code-sm text-code-sm">
+<span>Audio: 120.0s</span>
+<span class="text-secondary font-medium">Proc: 45.6s</span>
+</div>
+</div>
+<!-- Card 4: Median Latency -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1 bg-tertiary"></div>
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Median Utterance Latency</span>
+<span class="font-code-sm text-code-sm text-tertiary px-1 bg-surface-container">p95: 490ms</span>
+</div>
+<div class="my-space-md flex items-baseline gap-2">
+<span class="font-code-sm text-[44px] font-semibold text-on-surface leading-none">320<span class="text-2xl text-outline font-normal">ms</span></span>
+<span class="font-label-sm text-label-sm text-tertiary">VAD lead: 40ms</span>
+</div>
+<div class="flex items-center gap-1 font-label-sm text-label-sm text-outline">
+<span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>
+          Zero human-perceivable stutter
+        </div>
+</div>
+</div>
+<!-- 3. Detailed Levenshtein Alignment Word Diff Inspector -->
+<div class="mt-space-md bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-md shadow-md">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">compare</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+            Levenshtein Alignment Word Diff Inspector
+          </h2>
+<span class="font-code-sm text-code-sm px-2 py-0.5 bg-surface-container text-outline">Sample #CV-UTT-0492</span>
+</div>
+<!-- Diff Legend -->
+<div class="flex items-center gap-3 flex-wrap font-code-sm text-code-sm">
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-tertiary-container text-on-tertiary flex items-center justify-center text-[9px] font-bold">C</span> Correct</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-error-container text-on-error flex items-center justify-center text-[9px] font-bold">D</span> Deletion</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-secondary-container text-on-secondary flex items-center justify-center text-[9px] font-bold">S</span> Substitution</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-primary-container text-on-primary-container flex items-center justify-center text-[9px] font-bold">I</span> Insertion</span>
+</div>
+</div>
+<!-- Synced Audio Player & Waveform Visualizer -->
+<div class="bg-surface-container-lowest p-space-md flex flex-col gap-space-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<button class="w-9 h-9 bg-primary text-on-primary flex items-center justify-center hover:bg-primary-fixed-dim transition-colors" id="playback-btn" title="Play Snippet">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+</button>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-medium">Lecture Clip: Multi-Head Attention Explanation</span>
+<span class="font-code-sm text-code-sm text-outline">16000Hz · Mono WAV · Length: 00:08.420</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<span class="font-code-sm text-code-sm text-primary font-medium" id="audio-time">00:03.120 / 00:08.420</span>
+<div class="flex items-center gap-1 bg-surface-container px-2 py-1">
+<span class="material-symbols-outlined text-[16px] text-outline">speed</span>
+<span class="font-code-sm text-code-sm text-on-surface">1.0x</span>
+</div>
+</div>
+</div>
+<!-- Waveform canvas representation (SVG) -->
+<div class="relative w-full h-16 bg-surface-container flex items-center px-2 cursor-pointer group" id="waveform-container">
+<svg class="w-full h-12 text-on-surface-variant/40" preserveaspectratio="none" viewbox="0 0 1000 60">
+<rect fill="currentColor" height="12" width="6" x="0" y="24"></rect>
+<rect fill="currentColor" height="20" width="6" x="10" y="20"></rect>
+<rect fill="currentColor" height="30" width="6" x="20" y="15"></rect>
+<rect fill="currentColor" height="40" width="6" x="30" y="10"></rect>
+<rect fill="currentColor" height="50" width="6" x="40" y="5"></rect>
+<rect fill="currentColor" height="36" width="6" x="50" y="12"></rect>
+<rect fill="currentColor" height="24" width="6" x="60" y="18"></rect>
+<rect fill="currentColor" height="16" width="6" x="70" y="22"></rect>
+<rect fill="currentColor" height="44" width="6" x="80" y="8"></rect>
+<rect fill="currentColor" height="52" width="6" x="90" y="4"></rect>
+<rect fill="currentColor" height="32" width="6" x="100" y="14"></rect>
+<rect fill="currentColor" height="22" width="6" x="110" y="19"></rect>
+<rect fill="currentColor" height="10" width="6" x="120" y="25"></rect>
+<rect fill="currentColor" height="38" width="6" x="130" y="11"></rect>
+<rect fill="currentColor" height="48" width="6" x="140" y="6"></rect>
+<rect fill="currentColor" height="28" width="6" x="150" y="16"></rect>
+<rect fill="currentColor" height="16" width="6" x="160" y="22"></rect>
+<rect fill="currentColor" height="42" width="6" x="170" y="9"></rect>
+<rect fill="currentColor" height="56" width="6" x="180" y="2"></rect>
+<rect fill="currentColor" height="34" width="6" x="190" y="13"></rect>
+<rect fill="currentColor" height="18" width="6" x="200" y="21"></rect>
+<rect fill="currentColor" height="12" width="6" x="210" y="24"></rect>
+<rect fill="currentColor" height="32" width="6" x="220" y="14"></rect>
+<rect fill="currentColor" height="46" width="6" x="230" y="7"></rect>
+<rect fill="currentColor" height="30" width="6" x="240" y="15"></rect>
+<rect fill="currentColor" height="14" width="6" x="250" y="23"></rect>
+<rect fill="currentColor" height="26" width="6" x="260" y="17"></rect>
+<rect fill="currentColor" height="44" width="6" x="270" y="8"></rect>
+<rect fill="currentColor" height="54" width="6" x="280" y="3"></rect>
+<rect fill="currentColor" height="28" width="6" x="290" y="16"></rect>
+<rect fill="currentColor" height="16" width="6" x="300" y="22"></rect>
+<rect fill="currentColor" height="36" width="6" x="310" y="12"></rect>
+<rect fill="currentColor" height="50" width="6" x="320" y="5"></rect>
+<rect fill="currentColor" height="24" width="6" x="330" y="18"></rect>
+<rect fill="currentColor" height="12" width="6" x="340" y="24"></rect>
+<rect fill="currentColor" height="40" width="6" x="350" y="10"></rect>
+<rect fill="currentColor" height="56" width="6" x="360" y="2"></rect>
+<rect fill="currentColor" height="32" width="6" x="370" y="14"></rect>
+<rect fill="currentColor" height="18" width="6" x="380" y="21"></rect>
+<rect fill="currentColor" height="34" width="6" x="390" y="13"></rect>
+<rect fill="currentColor" height="52" width="6" x="400" y="4"></rect>
+<rect fill="currentColor" height="38" width="6" x="410" y="11"></rect>
+<rect fill="currentColor" height="22" width="6" x="420" y="19"></rect>
+<rect fill="currentColor" height="10" width="6" x="430" y="25"></rect>
+<rect fill="currentColor" height="28" width="6" x="440" y="16"></rect>
+<rect fill="currentColor" height="46" width="6" x="450" y="7"></rect>
+<rect fill="currentColor" height="58" width="6" x="460" y="1"></rect>
+<rect fill="currentColor" height="30" width="6" x="470" y="15"></rect>
+<rect fill="currentColor" height="16" width="6" x="480" y="22"></rect>
+<rect fill="currentColor" height="24" width="6" x="490" y="18"></rect>
+<rect fill="currentColor" height="42" width="6" x="500" y="9"></rect>
+<rect fill="currentColor" height="54" width="6" x="510" y="3"></rect>
+<rect fill="currentColor" height="36" width="6" x="520" y="12"></rect>
+<rect fill="currentColor" height="18" width="6" x="530" y="21"></rect>
+<rect fill="currentColor" height="12" width="6" x="540" y="24"></rect>
+<rect fill="currentColor" height="32" width="6" x="550" y="14"></rect>
+<rect fill="currentColor" height="44" width="6" x="560" y="8"></rect>
+<rect fill="currentColor" height="22" width="6" x="570" y="19"></rect>
+<rect fill="currentColor" height="10" width="6" x="580" y="25"></rect>
+<rect fill="currentColor" height="40" width="6" x="590" y="10"></rect>
+<rect fill="currentColor" height="56" width="6" x="600" y="2"></rect>
+<rect fill="currentColor" height="30" width="6" x="610" y="15"></rect>
+<rect fill="currentColor" height="14" width="6" x="620" y="23"></rect>
+<rect fill="currentColor" height="38" width="6" x="630" y="11"></rect>
+<rect fill="currentColor" height="50" width="6" x="640" y="5"></rect>
+<rect fill="currentColor" height="24" width="6" x="650" y="18"></rect>
+<rect fill="currentColor" height="12" width="6" x="660" y="24"></rect>
+<rect fill="currentColor" height="28" width="6" x="670" y="16"></rect>
+<rect fill="currentColor" height="44" width="6" x="680" y="8"></rect>
+<rect fill="currentColor" height="56" width="6" x="690" y="2"></rect>
+<rect fill="currentColor" height="32" width="6" x="700" y="14"></rect>
+<rect fill="currentColor" height="20" width="6" x="710" y="20"></rect>
+<rect fill="currentColor" height="12" width="6" x="720" y="24"></rect>
+<rect fill="currentColor" height="34" width="6" x="730" y="13"></rect>
+<rect fill="currentColor" height="46" width="6" x="740" y="7"></rect>
+<rect fill="currentColor" height="58" width="6" x="750" y="1"></rect>
+<rect fill="currentColor" height="28" width="6" x="760" y="16"></rect>
+<rect fill="currentColor" height="14" width="6" x="770" y="23"></rect>
+<rect fill="currentColor" height="38" width="6" x="780" y="11"></rect>
+<rect fill="currentColor" height="48" width="6" x="790" y="6"></rect>
+<rect fill="currentColor" height="26" width="6" x="800" y="17"></rect>
+<rect fill="currentColor" height="16" width="6" x="810" y="22"></rect>
+<rect fill="currentColor" height="30" width="6" x="820" y="15"></rect>
+<rect fill="currentColor" height="42" width="6" x="830" y="9"></rect>
+<rect fill="currentColor" height="54" width="6" x="840" y="3"></rect>
+<rect fill="currentColor" height="32" width="6" x="850" y="14"></rect>
+<rect fill="currentColor" height="20" width="6" x="860" y="20"></rect>
+<rect fill="currentColor" height="10" width="6" x="870" y="25"></rect>
+<rect fill="currentColor" height="36" width="6" x="880" y="12"></rect>
+<rect fill="currentColor" height="52" width="6" x="890" y="4"></rect>
+<rect fill="currentColor" height="28" width="6" x="900" y="16"></rect>
+<rect fill="currentColor" height="18" width="6" x="910" y="21"></rect>
+<rect fill="currentColor" height="40" width="6" x="920" y="10"></rect>
+<rect fill="currentColor" height="46" width="6" x="930" y="7"></rect>
+<rect fill="currentColor" height="30" width="6" x="940" y="15"></rect>
+<rect fill="currentColor" height="16" width="6" x="950" y="22"></rect>
+<rect fill="currentColor" height="24" width="6" x="960" y="18"></rect>
+<rect fill="currentColor" height="38" width="6" x="970" y="11"></rect>
+<rect fill="currentColor" height="20" width="6" x="980" y="20"></rect>
+<rect fill="currentColor" height="12" width="6" x="990" y="24"></rect>
+</svg>
+<!-- Playhead Scrubber line -->
+<div class="absolute top-0 bottom-0 left-[37%] w-0.5 bg-primary pointer-events-none">
+<span class="absolute top-0 -left-1.5 w-3.5 h-3.5 bg-primary text-[8px] flex items-center justify-center font-bold text-on-primary">▼</span>
+</div>
+</div>
+</div>
+<!-- Comparative Token Alignment Sequence -->
+<div class="flex flex-col gap-space-xs">
+<!-- Row: Ground Truth Reference -->
+<div class="flex flex-col lg:flex-row lg:items-center bg-surface-container p-space-sm gap-space-sm">
+<div class="w-32 shrink-0 font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+            REFERENCE:
+          </div>
+<div class="flex flex-wrap items-center gap-1.5 font-code-sm text-code-sm">
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">The</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">convolutional</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">layer</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">projects</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">tensors</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">into</span>
+<span class="px-2 py-1 bg-secondary-container/20 text-secondary font-medium">Transformer</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">blocks</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">via</span>
+<span class="px-2 py-1 bg-error-container/20 text-error line-through">eigenvalues</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">and</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">backpropagation</span>
+<span class="px-2 py-1 bg-surface-container-high text-on-surface">routines.</span>
+</div>
+</div>
+<!-- Row: Model Hypothesis (Whisper-Tiny WebGPU) -->
+<div class="flex flex-col lg:flex-row lg:items-center bg-surface-container p-space-sm gap-space-sm">
+<div class="w-32 shrink-0 font-label-sm text-label-sm uppercase tracking-wider text-primary font-semibold">
+            HYPOTHESIS:
+          </div>
+<div class="flex flex-wrap items-center gap-1.5 font-code-sm text-code-sm">
+<!-- Correct Token -->
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>The</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>convolutional</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>layer</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>projects</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>tensors</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<!-- Insertion Token -->
+<span class="px-2 py-1 bg-primary-container text-on-primary-container flex items-center gap-1 shadow-sm" title="Insertion: +[then]">
+<span class="text-[10px] uppercase font-bold">+INS:</span>
+<span>then</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>into</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<!-- Substitution Token -->
+<span class="px-2 py-1 bg-secondary text-on-secondary flex items-center gap-1 font-semibold" title="Substitution: 'Transformer' -&gt; 'Trans former'">
+<span class="text-[10px] uppercase font-bold">SUB:</span>
+<span>Trans former</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>blocks</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>via</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<!-- Deletion Token -->
+<span class="px-2 py-1 bg-error-container text-on-error-container line-through flex items-center gap-1" title="Deletion: [eigenvalues] omitted">
+<span class="text-[10px] uppercase font-bold">DEL:</span>
+<span>eigenvalues</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>and</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>backpropagation</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+<span class="px-2 py-1 bg-tertiary-container/30 text-tertiary flex items-center gap-1">
+<span>routines.</span>
+<span class="material-symbols-outlined text-[12px]">check</span>
+</span>
+</div>
+</div>
+</div>
+<!-- Quick Levenshtein Distance Matrix Summary -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 text-on-surface-variant font-code-sm text-code-sm bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-2">
+<span class="text-outline">Ref Tokens:</span>
+<span class="text-on-surface font-semibold">13</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-outline">Hyp Tokens:</span>
+<span class="text-on-surface font-semibold">13</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-outline">Edit Distance:</span>
+<span class="text-secondary font-semibold">3 ops</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-outline">Utt WER:</span>
+<span class="text-tertiary font-semibold">7.69%</span>
+</div>
+</div>
+</div>
+<!-- 4. Domain Terminology Glossary Recall & Audio Acoustic Insights -->
+<div class="mt-space-md grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Glossary Checklist (7 Cols) -->
+<div class="lg:col-span-7 bg-surface-container-low p-space-md lg:p-space-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">spellcheck</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+                Academic Glossary Terminology Recall
+              </h2>
+</div>
+<span class="font-code-sm text-code-sm text-tertiary px-1.5 py-0.5 bg-surface-container">97.5% AVG</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
+            Accuracy checklist tracking rare technical tokens across scientific lecture vocabularies.
+          </p>
+<div class="flex flex-col gap-space-xs">
+<!-- Term 1 -->
+<div class="bg-surface-container p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 bg-tertiary-container/30 text-tertiary flex items-center justify-center font-code-sm text-[12px] font-bold">1</span>
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Backpropagation</span>
+<span class="font-body-sm text-body-sm text-outline">Deep learning gradient optimization</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-code-sm text-code-sm text-tertiary font-semibold">100.0%</span>
+<span class="px-2 py-0.5 font-label-sm text-label-sm bg-tertiary text-on-tertiary uppercase font-medium">RECALLED</span>
+</div>
+</div>
+<!-- Term 2 -->
+<div class="bg-surface-container p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 bg-tertiary-container/30 text-tertiary flex items-center justify-center font-code-sm text-[12px] font-bold">2</span>
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Convolutional</span>
+<span class="font-body-sm text-body-sm text-outline">Spatial kernel filter operators</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-code-sm text-code-sm text-tertiary font-semibold">98.0%</span>
+<span class="px-2 py-0.5 font-label-sm text-label-sm bg-tertiary text-on-tertiary uppercase font-medium">RECALLED</span>
+</div>
+</div>
+<!-- Term 3 -->
+<div class="bg-surface-container p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 bg-secondary-container/30 text-secondary flex items-center justify-center font-code-sm text-[12px] font-bold">3</span>
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Eigenvalues</span>
+<span class="font-body-sm text-body-sm text-outline">Linear algebra spectral factor</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-code-sm text-code-sm text-secondary font-semibold">92.0%</span>
+<span class="px-2 py-0.5 font-label-sm text-label-sm bg-secondary text-on-secondary uppercase font-semibold">PARTIAL</span>
+</div>
+</div>
+<!-- Term 4 -->
+<div class="bg-surface-container p-space-sm flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 bg-tertiary-container/30 text-tertiary flex items-center justify-center font-code-sm text-[12px] font-bold">4</span>
+<div class="flex flex-col">
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Dropout</span>
+<span class="font-body-sm text-body-sm text-outline">Regularization probability masking</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-code-sm text-code-sm text-tertiary font-semibold">100.0%</span>
+<span class="px-2 py-0.5 font-label-sm text-label-sm bg-tertiary text-on-tertiary uppercase font-medium">RECALLED</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between text-outline font-label-sm text-label-sm">
+<span>Active Dictionary: CS_AI_LEXICON_V4</span>
+<button class="text-primary hover:underline flex items-center gap-1 font-label-sm text-label-sm">
+<span>Edit Custom Vocabulary</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Acoustic Environmental Breakdown & Chart (5 Cols) -->
+<div class="lg:col-span-5 bg-surface-container-low p-space-md lg:p-space-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+              Acoustic Robustness Curve
+            </h2>
+<span class="font-code-sm text-code-sm text-outline">SNR vs WER</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
+            Error curve degradation across simulated ambient auditorium reverberation.
+          </p>
+<!-- Inline SVG Chart (Accuracy decay) -->
+<div class="bg-surface-container-lowest p-space-sm flex flex-col gap-2">
+<div class="flex items-center justify-between font-code-sm text-code-sm text-outline">
+<span>WER (%)</span>
+<span>Reverb Decay (RT60)</span>
+</div>
+<div class="relative w-full h-36 flex items-end">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 400 120">
+<!-- Grid lines -->
+<line stroke="#353534" stroke-dasharray="3 3" x1="0" x2="400" y1="30" y2="30"></line>
+<line stroke="#353534" stroke-dasharray="3 3" x1="0" x2="400" y1="60" y2="60"></line>
+<line stroke="#353534" stroke-dasharray="3 3" x1="0" x2="400" y1="90" y2="90"></line>
+<!-- Whisper-Tiny WebGPU (Primary line) -->
+<path d="M 0 105 C 100 100, 200 85, 300 50 L 400 32" fill="none" stroke="#b4c5ff" stroke-width="2.5"></path>
+<!-- Reference faster-whisper (Dotted line) -->
+<path d="M 0 110 C 100 105, 200 95, 300 70 L 400 55" fill="none" stroke="#7bdb87" stroke-dasharray="4 4" stroke-width="2"></path>
+<!-- Markers -->
+<circle cx="0" cy="105" fill="#b4c5ff" r="4"></circle>
+<circle cx="200" cy="85" fill="#b4c5ff" r="4"></circle>
+<circle cx="400" cy="32" fill="#b4c5ff" r="4"></circle>
+<circle cx="400" cy="55" fill="#7bdb87" r="3"></circle>
+</svg>
+</div>
+<div class="flex items-center justify-between font-code-sm text-code-sm text-outline-variant pt-1">
+<span>Clean (0.0s)</span>
+<span>Moderate (0.6s)</span>
+<span>Auditorium (1.4s)</span>
+</div>
+</div>
+</div>
+<div class="mt-space-md flex items-center justify-between text-on-surface-variant font-code-sm text-code-sm">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-primary"></span>
+<span>WebGPU int8</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-tertiary"></span>
+<span>faster-whisper-base (Float16)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 5. Historical Experiments Table -->
+<div class="mt-space-md bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-md shadow-md">
+<!-- Table Header & Controls -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-xs">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+            Historical Experiment Registry
+          </h2>
+<span class="font-code-sm text-code-sm text-outline">Logged ASR benchmark runs cached in IndexedDB</span>
+</div>
+<!-- Filter & Search toolbar -->
+<div class="flex items-center gap-space-xs flex-wrap">
+<div class="flex items-center bg-surface-container px-2.5 py-1.5 gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">search</span>
+<input class="bg-transparent font-code-sm text-code-sm text-on-surface focus:outline-none w-44" id="table-search" placeholder="Search Run ID, Model..." type="text"/>
+</div>
+<button class="px-3 py-1.5 bg-surface-container text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">filter_alt</span>
+<span>Filter</span>
+</button>
+<button class="px-3 py-1.5 bg-surface-container text-on-surface font-label-sm text-label-sm hover:bg-surface-container-high transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">refresh</span>
+<span>Refresh</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="w-full overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm whitespace-nowrap">
+<thead>
+<tr class="bg-surface-container-highest text-on-surface font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-2.5 px-3">Run ID</th>
+<th class="py-2.5 px-3">Timestamp</th>
+<th class="py-2.5 px-3">Model Engine</th>
+<th class="py-2.5 px-3">Dataset</th>
+<th class="py-2.5 px-3">Condition</th>
+<th class="py-2.5 px-3 text-right">WER (%)</th>
+<th class="py-2.5 px-3 text-right">RTF</th>
+<th class="py-2.5 px-3 text-center">Status</th>
+<th class="py-2.5 px-3 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-on-surface-variant font-code-sm text-code-sm">
+<!-- Row 1 -->
+<tr class="bg-surface-container hover:bg-surface-container-high transition-colors">
+<td class="py-2.5 px-3 font-semibold text-primary">#EXP-2024-889</td>
+<td class="py-2.5 px-3 text-outline">2024-11-04 14:22:08</td>
+<td class="py-2.5 px-3 text-on-surface">Whisper-Tiny (WebGPU int8)</td>
+<td class="py-2.5 px-3">Mozilla Common Voice (ID)</td>
+<td class="py-2.5 px-3"><span class="px-2 py-0.5 bg-surface-container-highest text-on-surface">Baseline Clean</span></td>
+<td class="py-2.5 px-3 text-right font-semibold text-tertiary">8.4%</td>
+<td class="py-2.5 px-3 text-right text-secondary">0.38x</td>
+<td class="py-2.5 px-3 text-center">
+<span class="px-2 py-0.5 bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm">PASS</span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 bg-surface-container-highest hover:text-on-surface transition-colors font-label-sm text-label-sm">Inspect</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<td class="py-2.5 px-3 font-semibold text-primary">#EXP-2024-888</td>
+<td class="py-2.5 px-3 text-outline">2024-11-04 12:10:44</td>
+<td class="py-2.5 px-3 text-on-surface">faster-whisper-base (Ref)</td>
+<td class="py-2.5 px-3">Mozilla Common Voice (ID)</td>
+<td class="py-2.5 px-3"><span class="px-2 py-0.5 bg-surface-container-highest text-on-surface">Baseline Clean</span></td>
+<td class="py-2.5 px-3 text-right font-semibold text-tertiary">6.9%</td>
+<td class="py-2.5 px-3 text-right text-outline">0.82x</td>
+<td class="py-2.5 px-3 text-center">
+<span class="px-2 py-0.5 bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm">PASS</span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 bg-surface-container-highest hover:text-on-surface transition-colors font-label-sm text-label-sm">Inspect</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="bg-surface-container hover:bg-surface-container-high transition-colors">
+<td class="py-2.5 px-3 font-semibold text-primary">#EXP-2024-887</td>
+<td class="py-2.5 px-3 text-outline">2024-11-03 18:45:12</td>
+<td class="py-2.5 px-3 text-on-surface">Whisper-Tiny (WebGPU int8)</td>
+<td class="py-2.5 px-3">CS50 Lecture Audio</td>
+<td class="py-2.5 px-3"><span class="px-2 py-0.5 bg-secondary-container/20 text-secondary">E1 (Reverb RT60)</span></td>
+<td class="py-2.5 px-3 text-right font-semibold text-secondary">11.2%</td>
+<td class="py-2.5 px-3 text-right text-secondary">0.41x</td>
+<td class="py-2.5 px-3 text-center">
+<span class="px-2 py-0.5 bg-tertiary-container/30 text-tertiary font-label-sm text-label-sm">PASS</span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 bg-surface-container-highest hover:text-on-surface transition-colors font-label-sm text-label-sm">Inspect</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-low hover:bg-surface-container-high transition-colors">
+<td class="py-2.5 px-3 font-semibold text-primary">#EXP-2024-886</td>
+<td class="py-2.5 px-3 text-outline">2024-11-02 09:14:02</td>
+<td class="py-2.5 px-3 text-on-surface">Whisper-Tiny (WebGPU int8)</td>
+<td class="py-2.5 px-3">CS50 Lecture Audio</td>
+<td class="py-2.5 px-3"><span class="px-2 py-0.5 bg-error-container/20 text-error">E2 (Fast 185 WPM)</span></td>
+<td class="py-2.5 px-3 text-right font-semibold text-error">15.8%</td>
+<td class="py-2.5 px-3 text-right text-secondary">0.39x</td>
+<td class="py-2.5 px-3 text-center">
+<span class="px-2 py-0.5 bg-secondary-container/30 text-secondary font-label-sm text-label-sm">WARN</span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 bg-surface-container-highest hover:text-on-surface transition-colors font-label-sm text-label-sm">Inspect</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="bg-surface-container hover:bg-surface-container-high transition-colors">
+<td class="py-2.5 px-3 font-semibold text-primary">#EXP-2024-885</td>
+<td class="py-2.5 px-3 text-outline">2024-11-01 16:30:20</td>
+<td class="py-2.5 px-3 text-on-surface">Whisper-Tiny (Wasm Fallback)</td>
+<td class="py-2.5 px-3">Mozilla Common Voice (ID)</td>
+<td class="py-2.5 px-3"><span class="px-2 py-0.5 bg-surface-container-highest text-on-surface">Baseline Clean</span></td>
+<td class="py-2.5 px-3 text-right font-semibold text-tertiary">8.6%</td>
+<td class="py-2.5 px-3 text-right text-error font-semibold">1.48x</td>
+<td class="py-2.5 px-3 text-center">
+<span class="px-2 py-0.5 bg-error-container/30 text-error font-label-sm text-label-sm">DEGRADE</span>
+</td>
+<td class="py-2.5 px-3 text-right">
+<button class="px-2 py-1 bg-surface-container-highest hover:text-on-surface transition-colors font-label-sm text-label-sm">Inspect</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination and Registry Stats -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-space-xs text-on-surface-variant font-code-sm text-code-sm">
+<div class="flex items-center gap-2">
+<span>Displaying 1–5 of 48 experiments</span>
+<span class="text-outline">|</span>
+<span class="text-tertiary">IndexedDB Local Storage: 4.8MB</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high transition-colors text-outline">First</button>
+<button class="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high transition-colors text-outline">&lt;</button>
+<button class="px-2.5 py-1 bg-primary-container text-on-primary-container font-semibold">1</button>
+<button class="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high transition-colors">2</button>
+<button class="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high transition-colors">3</button>
+<button class="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high transition-colors">&gt;</button>
+<button class="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high transition-colors">Last</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Micro-interactions & suite simulation
+  (function () {
+    // 1. Corpus Selector Tabs
+    const corpusTabs = document.querySelectorAll('.corpus-tab');
+    corpusTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        corpusTabs.forEach((t) => {
+          t.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-semibold');
+          t.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+        });
+        tab.classList.add('bg-primary-container', 'text-on-primary-container', 'font-semibold');
+        tab.classList.remove('bg-surface-container-low', 'text-on-surface-variant');
+      });
+    });
+
+    // 2. Condition modifier toggles
+    const conditionChips = document.querySelectorAll('.condition-chip');
+    conditionChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        conditionChips.forEach((c) => {
+          c.classList.remove('bg-surface-container', 'text-on-surface');
+          c.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+        });
+        chip.classList.add('bg-surface-container', 'text-on-surface');
+        chip.classList.remove('bg-surface-container-low', 'text-on-surface-variant');
+      });
+    });
+
+    // 3. Audio Playback Button Simulation
+    const playBtn = document.getElementById('playback-btn');
+    const timeDisplay = document.getElementById('audio-time');
+    let isPlaying = false;
+    let timer = null;
+    let currentSec = 3.12;
+
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        if (isPlaying) {
+          playBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">pause</span>';
+          timer = setInterval(() => {
+            currentSec += 0.1;
+            if (currentSec >= 8.42) {
+              currentSec = 0.0;
+            }
+            if (timeDisplay) {
+              timeDisplay.textContent = `00:0${currentSec.toFixed(3)} / 00:08.420`;
+            }
+          }, 100);
+        } else {
+          playBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span>';
+          clearInterval(timer);
+        }
+      });
+    }
+
+    // 4. Run Benchmark Action (Simulated computation feedback)
+    const runBtn = document.getElementById('btn-run-benchmark');
+    if (runBtn) {
+      runBtn.addEventListener('click', () => {
+        const originalText = runBtn.innerHTML;
+        runBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">refresh</span> Benchmarking...';
+        runBtn.classList.add('opacity-75');
+
+        setTimeout(() => {
+          runBtn.innerHTML = '<span class="material-symbols-outlined text-[18px]">done</span> Benchmark Complete';
+          runBtn.classList.remove('opacity-75');
+          runBtn.classList.add('bg-tertiary', 'text-on-tertiary');
+
+          setTimeout(() => {
+            runBtn.innerHTML = originalText;
+            runBtn.classList.remove('bg-tertiary', 'text-on-tertiary');
+          }, 2500);
+        }, 1200);
+      });
+    }
+
+    // 5. CSV Export simulation
+    const exportBtn = document.getElementById('btn-export-csv');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const originalText = exportBtn.innerHTML;
+        exportBtn.innerHTML = '<span class="material-symbols-outlined text-[18px] text-tertiary">check</span> Exported 48 Rows';
+        setTimeout(() => {
+          exportBtn.innerHTML = originalText;
+        }, 2000);
+      });
+    }
+  })();
+</script></main><div class="fixed bottom-0 left-72 right-0 h-16 bg-surface-container-lowest z-40 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px] text-primary">mic</span><select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer pr-space-xs"><option class="bg-surface-container-high text-on-surface" value="1">Built-in Microphone (MacBook Pro Audio)</option><option class="bg-surface-container-high text-on-surface" value="2">Auditorium Sennheiser Array (USB)</option><option class="bg-surface-container-high text-on-surface" value="3">Virtual Audio Cable (Loopback)</option></select></div><div class="hidden md:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant"><div class="flex items-end gap-0.5 h-4 w-20"><span class="w-1 h-2 bg-tertiary"></span><span class="w-1 h-3.5 bg-tertiary"></span><span class="w-1 h-4 bg-tertiary animate-pulse"></span><span class="w-1 h-1.5 bg-tertiary"></span><span class="w-1 h-3 bg-tertiary"></span><span class="w-1 h-2.5 bg-tertiary"></span><span class="w-1 h-4 bg-tertiary"></span><span class="w-1 h-2 bg-tertiary"></span></div><span class="font-code-sm text-code-sm text-tertiary">VAD: Speech (0.78)</span></div></div><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-1 bg-surface-container font-code-sm text-code-sm text-on-surface-variant"><span class="px-1.5 py-0.5 bg-surface-container-high text-secondary font-medium">[SPACE]</span><span>or</span><span class="px-1.5 py-0.5 bg-surface-container-high text-secondary font-medium">[H]</span><span>Keypoint Bookmark</span></div><button class="px-space-md py-2 font-label-md text-label-md bg-secondary text-on-secondary font-semibold hover:bg-secondary-fixed-dim transition-colors flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[18px]">star</span><span>Bookmark Keypoint</span></button><button class="px-space-md py-2 font-label-md text-label-md bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-colors flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[18px]">stop_circle</span><span>Stop</span></button><button class="px-space-md py-2 font-label-md text-label-md bg-primary-container text-on-primary-container hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[18px]">pause</span><span>Pause</span></button></div></div></div></body></html>

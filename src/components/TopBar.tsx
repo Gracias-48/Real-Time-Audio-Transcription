@@ -4,98 +4,187 @@ import { Link, useLocation } from 'react-router-dom'
 
 interface TopBarProps {
   onOpenSettings: () => void
+  onOpenExport?: () => void
+  onToggleSidebar?: () => void
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings }) => {
+export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenExport, onToggleSidebar }) => {
   const { status, statusMessage, latencyMs, rtf, engineDevice, settings, updateSettings } = useAppStore()
   const location = useLocation()
   const isEvaluatePage = location.pathname === '/evaluate'
 
   const latencySec = (latencyMs / 1000).toFixed(2) + 's'
 
-  // Status dot color
-  let dotColor = 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.7)]'
-  if (status === 'loading') {
-    dotColor = 'bg-amber-400 animate-ping'
-  } else if (status === 'error') {
-    dotColor = 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.7)]'
-  } else if (status === 'idle') {
-    dotColor = 'bg-slate-500'
-  }
-
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-[#1b263b] bg-[#0c1322]/80 backdrop-blur-md rounded-t-2xl">
-      {/* Left: Status Dot & Label */}
-      <div className="flex items-center gap-3">
-        <span className={`inline-block w-3 h-3 rounded-full ${dotColor} transition-all duration-300`} />
-        <span className="text-[15px] font-semibold tracking-wide text-slate-100 select-none">
-          {statusMessage || 'Ready — Click Start to transcribe'}
-        </span>
-        <div className="hidden sm:inline-flex items-center gap-1.5">
-          <span className="items-center px-2 py-0.5 rounded text-[11px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60">
-            {settings.engine === 'browser' ? `Browser ${settings.browserModel} (${engineDevice})` : `Python ${settings.pythonModel} (${engineDevice})`}
-          </span>
+    <header className="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md border-b border-[#262626]">
+      {/* Left: Brand & Acoustic Engine Status */}
+      <div className="flex items-center gap-space-md min-w-0">
+        {/* Mobile Hamburger */}
+        {onToggleSidebar && (
           <button
-            onClick={() => {
-              const next = settings.language === 'id' ? 'en' : settings.language === 'en' ? 'auto' : 'id'
-              updateSettings({ language: next })
-            }}
-            title="Click to switch language between Indonesian (ID), English (EN), and Auto"
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 transition-colors cursor-pointer"
+            onClick={onToggleSidebar}
+            className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors lg:hidden shrink-0 cursor-pointer"
+            title="Toggle Navigation Menu"
+            type="button"
           >
-            {settings.language === 'id' && '🇮🇩 ID'}
-            {settings.language === 'en' && '🇺🇸 EN'}
-            {settings.language === 'auto' && '🌐 AUTO'}
+            <span className="material-symbols-outlined text-[20px]">menu</span>
           </button>
+        )}
+
+        {/* Brand Group */}
+        <div className="flex items-center gap-space-sm shrink-0">
+          <div className="w-8 h-8 bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm select-none">
+            TN
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-space-xs">
+              <span className="font-sans text-base font-semibold tracking-tight text-on-surface leading-none">
+                TranscribeNote
+              </span>
+              <span className="font-mono text-[10px] bg-primary-container text-on-primary-container px-1 py-0.5 uppercase tracking-wide font-medium">
+                Carbon v1.2
+              </span>
+            </div>
+            <span className="font-mono text-[11px] text-outline tracking-tight pt-0.5">
+              Lecture AI · On-Device ASR
+            </span>
+          </div>
+        </div>
+
+        <div className="h-6 w-px bg-surface-bright hidden xl:block"></div>
+
+        {/* Live Listening Status Beacon */}
+        <div className="hidden xl:flex items-center gap-space-xs px-space-sm py-1 bg-tertiary-container/20 text-tertiary font-mono text-[11px]">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              status === 'listening'
+                ? 'bg-tertiary animate-pulse'
+                : status === 'loading'
+                  ? 'bg-secondary animate-ping'
+                  : 'bg-outline'
+            }`}
+          ></span>
+          <span className="font-medium tracking-wide uppercase">
+            {status === 'listening'
+              ? 'Listening (WebGPU Local)'
+              : status === 'loading'
+                ? 'Loading Model...'
+                : statusMessage || 'Ready / Standby'}
+          </span>
+        </div>
+
+        {/* Engine Badge */}
+        <div className="hidden 2xl:flex items-center gap-1.5 px-space-sm py-1 bg-surface-container font-mono text-[11px] text-on-surface-variant">
+          <span className="material-symbols-outlined text-[14px] text-primary">memory</span>
+          <span>
+            {settings.engine === 'browser'
+              ? `Browser ${settings.browserModel} (${engineDevice})`
+              : `Python ${settings.pythonModel} (${engineDevice})`}
+          </span>
+        </div>
+
+        {/* Security / Privacy Badge */}
+        <div className="hidden lg:flex items-center gap-1.5 px-space-sm py-1 bg-surface-container font-mono text-[11px] text-tertiary">
+          <span className="material-symbols-outlined text-[14px]">lock</span>
+          <span>100% On-Device / No Cloud</span>
         </div>
       </div>
 
-      {/* Right: Metrics & Quick Nav */}
-      <div className="flex items-center gap-6">
-        {/* Latency & RTF Display (matching mockup typography) */}
-        <div className="flex items-center gap-5 text-sm select-none">
-          <div className="flex items-baseline gap-2">
-            <span className="text-slate-400 font-medium">Latency</span>
-            <span className="text-xl sm:text-2xl font-bold text-[#3b82f6] tracking-tight">
-              {latencySec}
-            </span>
+      {/* Right: Language, Telemetry, and Quick Actions */}
+      <div className="flex items-center gap-space-md shrink-0">
+        {/* Language Switcher */}
+        <div className="flex items-center bg-surface-container p-0.5">
+          <button
+            onClick={() => updateSettings({ language: 'id' })}
+            className={`px-2 py-1 font-mono text-[11px] transition-colors cursor-pointer ${
+              settings.language === 'id'
+                ? 'bg-primary-container text-on-primary-container font-semibold'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+            }`}
+            type="button"
+            title="Set spoken language to Indonesian"
+          >
+            🇮🇩 ID
+          </button>
+          <button
+            onClick={() => updateSettings({ language: 'en' })}
+            className={`px-2 py-1 font-mono text-[11px] transition-colors cursor-pointer ${
+              settings.language === 'en'
+                ? 'bg-primary-container text-on-primary-container font-semibold'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+            }`}
+            type="button"
+            title="Set spoken language to English"
+          >
+            🇺🇸 EN
+          </button>
+          <button
+            onClick={() => updateSettings({ language: 'auto' })}
+            className={`px-2 py-1 font-mono text-[11px] transition-colors cursor-pointer ${
+              settings.language === 'auto'
+                ? 'bg-primary-container text-on-primary-container font-semibold'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+            }`}
+            type="button"
+            title="Auto-detect language"
+          >
+            🌐 Auto
+          </button>
+        </div>
+
+        {/* Latency & RTF Display */}
+        <div className="hidden md:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 font-mono text-[12px] border border-[#262626]">
+          <div className="flex items-center gap-1">
+            <span className="text-outline">Latency:</span>
+            <span className="text-tertiary font-semibold">{latencySec}</span>
           </div>
-          <span className="text-slate-600 font-light">|</span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-slate-400 font-medium">RTF</span>
-            <span className="text-xl sm:text-2xl font-bold text-[#3b82f6] tracking-tight">
-              {rtf.toFixed(2)}
-            </span>
+          <span className="text-outline-variant">|</span>
+          <div className="flex items-center gap-1">
+            <span className="text-outline">RTF:</span>
+            <span className="text-secondary font-semibold">{rtf.toFixed(2)}x</span>
           </div>
         </div>
 
-        {/* Action icons / navigation */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-          <button
-            onClick={onOpenSettings}
-            title="ASR & VAD Settings"
-            className="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 rounded-lg transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-
+        {/* Actions */}
+        <div className="flex items-center gap-space-xs">
           {isEvaluatePage ? (
             <Link
               to="/"
-              className="px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800 rounded-lg transition-colors"
+              className="px-space-sm py-1.5 font-mono text-[11px] text-primary bg-primary-container/20 border border-primary/40 hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center gap-1"
             >
-              ← Back to App
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span className="hidden sm:inline">Transcriber</span>
             </Link>
           ) : (
             <Link
               to="/evaluate"
-              className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded-lg transition-colors"
+              className="px-space-sm py-1.5 font-mono text-[11px] text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1"
             >
-              /evaluate
+              <span className="material-symbols-outlined text-[16px]">speed</span>
+              <span className="hidden lg:inline">/evaluate</span>
             </Link>
+          )}
+
+          <button
+            onClick={onOpenSettings}
+            className="px-space-sm py-1.5 font-mono text-[11px] text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1 cursor-pointer"
+            type="button"
+            title="Acoustic & VAD Settings"
+          >
+            <span className="material-symbols-outlined text-[16px]">tune</span>
+            <span className="hidden lg:inline">Settings</span>
+          </button>
+
+          {onOpenExport && (
+            <button
+              onClick={onOpenExport}
+              className="px-space-sm py-1.5 font-mono text-[11px] text-on-primary bg-primary-container hover:bg-inverse-primary transition-colors flex items-center gap-1 cursor-pointer font-medium"
+              type="button"
+              title="Export Notes & Transcript"
+            >
+              <span className="material-symbols-outlined text-[16px]">file_download</span>
+              <span className="hidden sm:inline">Export</span>
+            </button>
           )}
         </div>
       </div>

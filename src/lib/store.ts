@@ -139,6 +139,7 @@ interface AppState {
   metrics: UtteranceMetric[]
   settings: Settings
   downloadProgress: number | null // 0 to 100 or null
+  filterQuery: string
 
   // Actions
   setStatus: (status: AppStatus, message?: string) => void
@@ -147,7 +148,9 @@ interface AppState {
   setCurrentUtteranceStartMs: (ms: number) => void
   setIsSpeaking: (isSpeaking: boolean) => void
   setDownloadProgress: (p: number | null) => void
+  setFilterQuery: (query: string) => void
   addSentence: (text: string, startMs: number) => void
+  addManualNote: (text: string) => void
   toggleHighlight: (id: string) => void
   removeHighlight: (id: string) => void
   recordMetric: (metric: UtteranceMetric) => void
@@ -169,6 +172,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   metrics: [],
   settings: loadPersistedSettings(),
   downloadProgress: null,
+  filterQuery: '',
 
   setStatus: (status, message) => {
     let defaultMsg = 'Idle'
@@ -192,6 +196,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCurrentUtteranceStartMs: (currentUtteranceStartMs) => set({ currentUtteranceStartMs }),
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   setDownloadProgress: (downloadProgress) => set({ downloadProgress }),
+  setFilterQuery: (filterQuery) => set({ filterQuery }),
 
   addSentence: (text, startMs) => {
     const trimmed = text.trim()
@@ -210,6 +215,29 @@ export const useAppStore = create<AppState>((set, get) => ({
         console.warn('Storage quota exceeded:', err)
       }
       return { sentences: updated, partialText: '', currentUtteranceStartMs: 0 }
+    })
+  },
+
+  addManualNote: (text) => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    const sentences = get().sentences
+    const lastStartMs = sentences.length > 0 ? sentences[sentences.length - 1].startMs + 2000 : 0
+    const newSentence: Sentence = {
+      id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      startMs: lastStartMs,
+      text: trimmed,
+      highlighted: true,
+      highlightedAt: Date.now(),
+    }
+    set((state) => {
+      const updated = [...state.sentences, newSentence]
+      try {
+        localStorage.setItem(TRANSCRIPT_STORAGE_KEY, JSON.stringify(updated))
+      } catch (err) {
+        console.warn('Storage quota exceeded:', err)
+      }
+      return { sentences: updated }
     })
   },
 

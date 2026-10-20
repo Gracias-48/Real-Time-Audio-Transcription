@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"inverse-primary":"#0052dd","error-container":"#93000a","secondary-fixed":"#ffe08b","surface-container-highest":"#353534","on-tertiary-fixed":"#002108","surface-bright":"#393939","on-surface-variant":"#c3c6d8","error":"#ffb4ab","surface-container":"#201f1f","surface-container-high":"#2a2a2a","inverse-on-surface":"#313030","tertiary-container":"#198038","on-tertiary":"#003913","surface-container-low":"#1c1b1b","on-primary-fixed-variant":"#003da9","secondary-fixed-dim":"#f0c119","tertiary-fixed-dim":"#7bdb87","on-tertiary-fixed-variant":"#00531e","tertiary-fixed":"#96f8a1","primary-container":"#0f62fe","on-error":"#690005","on-error-container":"#ffdad6","surface":"#131313","on-secondary-fixed-variant":"#584400","on-surface":"#e5e2e1","surface-variant":"#353534","on-secondary-container":"#5d4900","tertiary":"#7bdb87","surface-container-lowest":"#0e0e0e","outline":"#8c90a2","primary-fixed-dim":"#b4c5ff","on-secondary-fixed":"#241a00","surface-dim":"#131313","secondary-container":"#e4b601","surface-tint":"#b4c5ff","primary":"#b4c5ff","outline-variant":"#424656","background":"#131313","primary-fixed":"#dbe1ff","on-background":"#e5e2e1","on-tertiary-container":"#d4ffd2","on-primary-container":"#f3f3ff","on-primary":"#002979","inverse-surface":"#e5e2e1","secondary":"#ffd247","on-secondary":"#3d2f00","on-primary-fixed":"#00174c"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-md":"1rem","margin":"1rem","gutter":"1rem","space-lg":"1.5rem","margin-desktop":"2rem","gutter-desktop":"1.5rem","space-xs":"0.25rem","space-sm":"0.5rem","space-xl":"2.5rem"},"fontFamily":{"code-sm":["JetBrains Mono"],"label-md":["JetBrains Mono"],"body-md":["IBM Plex Sans"],"headline-sm":["IBM Plex Sans"],"body-lg":["IBM Plex Sans"],"label-sm":["JetBrains Mono"],"headline-lg-mobile":["IBM Plex Sans"],"headline-lg":["IBM Plex Sans"],"headline-md":["IBM Plex Sans"],"display":["IBM Plex Sans"],"body-sm":["IBM Plex Sans"]},"fontSize":{"code-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"label-md":["13px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"500"}],"body-md":["15px",{"lineHeight":"24px","fontWeight":"400"}],"headline-sm":["18px",{"lineHeight":"24px","fontWeight":"500"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"500"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.005em","fontWeight":"600"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","fontWeight":"500"}],"display":["42px",{"lineHeight":"50px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary min-h-screen"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-40 flex flex-col pt-16"><div class="p-space-md bg-surface-container flex items-center justify-between"><span class="font-label-sm text-label-sm uppercase text-outline tracking-wider">Navigation Index</span><span class="font-label-sm text-label-sm text-tertiary font-code-sm">SYS_ONLINE</span></div><nav class="flex-1 p-space-sm space-y-1 overflow-y-auto" data-active-classes="bg-primary-container text-on-primary-container font-medium"><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="live-session" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">record_voice_over</span>Live Transcriber</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="key-highlights" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">star</span>Starred Highlights</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="lecture-archive" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">folder_open</span>Session Archive</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="evaluation-suite" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">query_stats</span>Evaluation Suite</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm" data-path="acoustic-settings" href="#"><span class="material-symbols-outlined mr-space-sm text-[18px]">tune</span>Acoustic Settings</a></nav><div class="p-space-md bg-surface-container-lowest space-y-2 pb-24"><div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm"><span>BUFFER MEMORY</span><span class="text-tertiary font-code-sm">18.4 MB / 1GB</span></div><div class="w-full bg-surface-container-high h-1"><div class="bg-tertiary h-1 w-[18%]"></div></div><div class="text-outline font-label-sm text-label-sm pt-1">Session ID: #LCT-2024-9980</div></div></aside><div class="pl-72"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><img alt="TranscribeNote Carbon Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XuU5HJVpHVirWkiKzxvXTvNbZbemwpF9eQSCJidTRHPfneC9QoOdnS589Wrb5G887q_5S1XwLAbGZGeh6CrVlxn-umk_ugpEEcFtHKoyn2ZyZKILzJohBjTL3R8-U_V6OeFSNaWLh-p0SB0u-5PtQLdXzO6Uzx6q1gqIbou-pFRIT4j06E5P9frJ8RKfWfxt3S5mcz8SmbMKJh994Hes5KWpI4hQOTu-427CUk-MyQsxAe-45zoVIrvZw"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface leading-none">TranscribeNote</span><span class="font-label-sm text-label-sm bg-primary-container text-on-primary-container px-1 py-0.5 uppercase tracking-wide">Carbon v1.2</span></div><span class="font-label-sm text-label-sm text-outline tracking-tight">Lecture AI · On-Device ASR</span></div></div><div class="h-6 w-px bg-surface-bright hidden xl:block"></div><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 bg-tertiary-container/20 text-tertiary font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span><span class="font-medium tracking-wide uppercase">Listening (WebGPU Local)</span></div><div class="hidden 2xl:flex items-center gap-space-xs px-space-sm py-1 bg-surface-container font-label-sm text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[14px] text-primary">memory</span><span>Browser whisper-tiny (WebGPU)</span></div><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-1 bg-surface-container font-label-sm text-label-sm text-tertiary"><span class="material-symbols-outlined text-[14px]">lock</span><span>100% On-Device / No Cloud</span></div></div><div class="flex items-center gap-space-md"><div class="hidden sm:flex items-center bg-surface-container p-0.5"><button class="px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button">🇮🇩 ID</button><button class="px-space-sm py-1 font-label-sm text-label-sm bg-primary-container text-on-primary-container font-medium" type="button">🇺🇸 EN</button><button class="px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button">🌐 Auto</button></div><div class="hidden md:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 font-code-sm text-code-sm"><div class="flex items-center gap-1"><span class="text-outline">Latency:</span><span class="text-tertiary font-medium">0.38s</span></div><span class="text-outline-variant">|</span><div class="flex items-center gap-1"><span class="text-outline">RTF:</span><span class="text-secondary font-medium">0.42x</span></div></div><div class="flex items-center gap-space-xs"><a class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1" data-path="evaluation-suite" href="#"><span class="material-symbols-outlined text-[16px]">speed</span><span class="hidden lg:inline">/evaluate</span></a><button class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1" type="button"><span class="material-symbols-outlined text-[16px]">settings</span><span class="hidden lg:inline">Settings</span></button><button class="px-space-sm py-1.5 font-label-sm text-label-sm text-on-primary bg-primary hover:bg-primary-fixed-dim transition-colors flex items-center gap-1" type="button"><span class="material-symbols-outlined text-[16px]">file_download</span><span class="hidden sm:inline font-medium">Export Notes</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-1"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 pb-20 w-full min-h-screen bg-surface"><div class="flex flex-col w-full relative min-h-[calc(100vh-8rem)]">
+<!-- Underlying Live Transcription Workspace (Dimmed Behind Modal) -->
+<div class="grid grid-cols-12 gap-gutter px-margin-desktop py-space-md opacity-30 pointer-events-none select-none filter blur-[2px]">
+<!-- Left Workspace: Session Metadata & Timeline Feed -->
+<div class="col-span-12 xl:col-span-8 flex flex-col gap-space-md">
+<div class="bg-surface-container p-space-md flex items-center justify-between">
+<div class="flex items-center gap-space-md">
+<span class="w-3 h-3 bg-tertiary rounded-full animate-ping"></span>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">CS-6820: Deep Learning Architectures</h2>
+<p class="font-label-sm text-label-sm text-outline">Prof. A. Vaswani · Lecture Hall 4B · Sequence Modeling &amp; Attention</p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm font-code-sm text-code-sm text-tertiary bg-surface-container-high px-space-sm py-1">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+<span>00:07:42 / LIVE</span>
+</div>
+</div>
+<!-- Live Stream Blocks -->
+<div class="flex flex-col gap-space-sm">
+<div class="bg-surface-container-low p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-primary font-code-sm">SPEAKER 01 [PROFESSOR]</span>
+<span class="text-outline font-code-sm">00:04:12</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">
+            The attention mechanism in Transformers calculates dynamic weights between all tokens simultaneously rather than sequentially. This is why we eliminate the recurrence bottleneck typical in LSTMs.
+          </p>
+</div>
+<div class="bg-surface-container-low p-space-md flex flex-col gap-space-xs bg-secondary/5">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-secondary font-code-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">star</span> KEYPOINT BOOKMARK
+            </span>
+<span class="text-outline font-code-sm">00:04:45</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface font-medium">
+            Notice that self-attention has quadratic O(N^2) complexity with respect to sequence length, which makes long context windows memory intensive. This will be critical for your implementation in HW 3.
+          </p>
+</div>
+<div class="bg-surface-container-low p-space-md flex flex-col gap-space-xs">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-primary font-code-sm">SPEAKER 01 [PROFESSOR]</span>
+<span class="text-outline font-code-sm">00:06:18</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">
+            Key Exam Topic: Differences between cross-attention and self-attention in decoder blocks: masked forward tokens vs querying memory output from the encoder stack.
+          </p>
+</div>
+</div>
+</div>
+<!-- Right Workspace: Realtime Keypoints Panel -->
+<div class="col-span-12 xl:col-span-4 flex flex-col gap-space-md">
+<div class="bg-surface-container p-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<span class="font-label-md text-label-md text-on-surface font-semibold uppercase tracking-wider">Bookmarked Highlights</span>
+<span class="font-code-sm text-code-sm bg-secondary text-on-secondary px-1.5 py-0.5 font-bold">4 ITEMS</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline">Stored in browser IndexedDB memory</p>
+</div>
+<div class="bg-surface-container-low p-space-md flex flex-col gap-space-sm">
+<div class="p-space-sm bg-surface-container">
+<span class="font-label-sm text-label-sm text-secondary font-code-sm">00:04:12 #KEY-01</span>
+<p class="font-body-sm text-body-sm text-on-surface line-clamp-2">Attention mechanism dynamic token weight calculation</p>
+</div>
+<div class="p-space-sm bg-surface-container">
+<span class="font-label-sm text-label-sm text-secondary font-code-sm">00:04:45 #KEY-02</span>
+<p class="font-body-sm text-body-sm text-on-surface line-clamp-2">O(N^2) complexity constraint on memory allocation</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Deep Modal Overlay Dim Backdrop -->
+<div class="fixed inset-0 z-50 bg-surface-container-lowest/80 backdrop-blur-sm flex items-center justify-center p-space-md overflow-y-auto">
+<!-- Modal Container: IBM Carbon Strict Slate Geometry -->
+<div class="relative w-full max-w-4xl bg-surface-container-low shadow-2xl flex flex-col my-auto transition-all transform scale-100">
+<!-- Modal Header -->
+<div class="p-space-lg bg-surface-container flex items-start justify-between">
+<div class="flex items-start gap-space-md min-w-0">
+<div class="w-10 h-10 bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[24px]">ios_share</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-sm flex-wrap">
+<h1 class="font-headline-md text-headline-md font-semibold text-on-surface tracking-tight">
+                Export Lecture Notes &amp; Artifacts
+              </h1>
+<span class="font-label-sm text-label-sm bg-surface-bright text-on-surface-variant px-1.5 py-0.5 font-code-sm uppercase">
+                Ready
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pt-1 truncate">
+              Session: CS-6820 Deep Learning Architectures · 48 sentences · 4 key highlights · 00:07:42 duration
+            </p>
+</div>
+</div>
+<!-- Close Action (Carbon Icon Button) -->
+<button aria-label="Close dialog" class="w-8 h-8 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-bright transition-colors shrink-0" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Tabbed Format Switcher (IBM Carbon Style Tabs) -->
+<div class="flex items-center bg-surface-container-lowest px-space-lg">
+<button class="group relative py-3 px-space-md font-label-md text-label-md font-semibold text-primary flex items-center gap-space-xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Markdown (.md)</span>
+<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-container"></span>
+</button>
+<button class="group relative py-3 px-space-md font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">data_object</span>
+<span>Structured JSON (.json)</span>
+</button>
+<button class="group relative py-3 px-space-md font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span>Extractive AI Summary</span>
+<span class="font-label-sm text-label-sm bg-tertiary-container text-on-tertiary-container px-1.5 py-0.2 font-code-sm ml-1">
+            100% Local TF-IDF
+          </span>
+</button>
+</div>
+<!-- Modal Body Content -->
+<div class="p-space-lg flex flex-col gap-space-lg max-h-[calc(85vh-200px)] overflow-y-auto">
+<!-- Export Configuration Options: 2x2 Grid -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+            Inclusion Filters &amp; Sanitization
+          </span>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-space-xs">
+<!-- Checkbox 1 -->
+<label class="flex items-center gap-space-sm p-space-sm bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer select-none">
+<input checked="" class="w-4 h-4 accent-primary-container rounded-none cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-medium">Session Metadata &amp; Timings</span>
+<span class="font-body-sm text-body-sm text-outline">Duration, RTF latency metrics, and hardware engine</span>
+</div>
+</label>
+<!-- Checkbox 2 -->
+<label class="flex items-center gap-space-sm p-space-sm bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer select-none">
+<input checked="" class="w-4 h-4 accent-primary-container rounded-none cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-medium">Highlighted Key Takeaways</span>
+<span class="font-body-sm text-body-sm text-secondary font-code-sm">4 starred lecture items selected</span>
+</div>
+</label>
+<!-- Checkbox 3 -->
+<label class="flex items-center gap-space-sm p-space-sm bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer select-none">
+<input checked="" class="w-4 h-4 accent-primary-container rounded-none cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-medium">Full Timestamped Transcript</span>
+<span class="font-body-sm text-body-sm text-outline">Complete 48 sentence segments chronologically aligned</span>
+</div>
+</label>
+<!-- Checkbox 4 -->
+<label class="flex items-center gap-space-sm p-space-sm bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer select-none">
+<input class="w-4 h-4 accent-primary-container rounded-none cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-medium">Anonymize Speaker References</span>
+<span class="font-body-sm text-body-sm text-outline">Replace vocal identifiers with generic academic tokens</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Artifact Preview Box -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+              Artifact Preview (Markdown)
+            </span>
+<div class="flex items-center gap-space-xs font-code-sm text-code-sm text-outline">
+<span class="material-symbols-outlined text-[14px]">data_info_alert</span>
+<span>Approx. 4.2 KB · UTF-8 Encoded</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-md font-code-sm text-code-sm text-on-surface overflow-x-auto max-h-60 leading-relaxed select-text space-y-2">
+<div class="text-primary font-semibold"># Lecture Notes: CS-6820 Deep Learning Architectures</div>
+<div class="text-outline">
+<span class="text-on-surface-variant font-medium">Date:</span> 2024-11-04 | 
+              <span class="text-on-surface-variant font-medium">Duration:</span> 00:07:42 | 
+              <span class="text-on-surface-variant font-medium">Engine:</span> Whisper-Tiny (WebGPU Local)
+            </div>
+<div class="text-outline">
+<span class="text-on-surface-variant font-medium">Accuracy:</span> 0.42x RTF | 
+              <span class="text-on-surface-variant font-medium">WER Benchmark:</span> ~8.4%
+            </div>
+<div class="pt-2 text-secondary font-semibold">## 🌟 Key Lecture Highlights</div>
+<div class="pl-2 flex flex-col gap-1 text-on-surface-variant">
+<div>
+<span class="text-secondary font-medium">- [00:04:12] Attention Mechanism Intro:</span> 
+                The attention mechanism in Transformers calculates dynamic weights between all tokens simultaneously rather than sequentially.
+              </div>
+<div>
+<span class="text-secondary font-medium">- [00:04:45] Complexity O(N^2) Warning:</span> 
+                Notice that self-attention has quadratic O(N^2) complexity with respect to the input sequence length, which makes long context windows memory intensive. (Critical for HW 3)
+              </div>
+<div>
+<span class="text-secondary font-medium">- [00:06:18] Exam Priority: Midterm Focus #3:</span> 
+                Key Exam Topic: Differences between cross-attention and self-attention in decoder blocks: masked forward tokens vs querying memory output.
+              </div>
+</div>
+<div class="pt-2 text-primary font-semibold">## 📝 Full Synchronized Transcript</div>
+<div class="pl-2 flex flex-col gap-1 text-outline">
+<div><span class="text-primary-container font-mono">[00:00:15] Professor:</span> Good morning everyone, today we dive deep into the Transformer self-attention layers...</div>
+<div><span class="text-primary-container font-mono">[00:01:04] Professor:</span> Before we inspect the matrix math, remember the core motivation: sequential recurrence cannot parallelize...</div>
+<div class="text-surface-bright italic">[46 additional speech segments encoded below...]</div>
+</div>
+</div>
+</div>
+<!-- Security & Local Privacy Callout Banner -->
+<div class="p-space-md bg-tertiary-container/15 flex items-center justify-between flex-wrap gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[20px]">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-tertiary font-semibold">Destination: Local Browser Download</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Zero Cloud Retention · 100% On-Device WebGPU Processing</span>
+</div>
+</div>
+<div class="font-code-sm text-code-sm text-tertiary px-space-sm py-0.5 bg-surface-container-lowest font-medium uppercase tracking-wider">
+            SANDBOXED
+          </div>
+</div>
+</div>
+<!-- Modal Footer Action Bar (Strict IBM Carbon High-Contrast Row) -->
+<div class="p-space-lg bg-surface-container flex items-center justify-between flex-wrap gap-space-md">
+<!-- Left Secondary Action -->
+<button class="h-10 px-space-md font-label-md text-label-md text-on-surface bg-surface-bright hover:bg-surface-container-highest transition-colors flex items-center gap-space-xs font-medium" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+<span>Copy to Clipboard</span>
+</button>
+<!-- Right Terminal Actions -->
+<div class="flex items-center gap-space-sm ml-auto">
+<button class="h-10 px-space-md font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors font-medium" type="button">
+            Cancel
+          </button>
+<button class="h-10 px-space-lg font-label-md text-label-md bg-primary-container hover:bg-primary-fixed hover:text-on-primary-fixed text-on-primary-container transition-colors flex items-center gap-space-xs font-semibold" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download .md File</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div></main><div class="fixed bottom-0 left-72 right-0 h-16 bg-surface-container-lowest z-40 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-1.5 font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px] text-primary">mic</span><select class="bg-transparent text-on-surface font-label-sm text-label-sm focus:outline-none cursor-pointer pr-space-xs"><option class="bg-surface-container-high text-on-surface" value="1">Built-in Microphone (MacBook Pro Audio)</option><option class="bg-surface-container-high text-on-surface" value="2">Auditorium Sennheiser Array (USB)</option><option class="bg-surface-container-high text-on-surface" value="3">Virtual Audio Cable (Loopback)</option></select></div><div class="hidden md:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 font-label-sm text-label-sm text-on-surface-variant"><div class="flex items-end gap-0.5 h-4 w-20"><span class="w-1 h-2 bg-tertiary"></span><span class="w-1 h-3.5 bg-tertiary"></span><span class="w-1 h-4 bg-tertiary animate-pulse"></span><span class="w-1 h-1.5 bg-tertiary"></span><span class="w-1 h-3 bg-tertiary"></span><span class="w-1 h-2.5 bg-tertiary"></span><span class="w-1 h-4 bg-tertiary"></span><span class="w-1 h-2 bg-tertiary"></span></div><span class="font-code-sm text-code-sm text-tertiary">VAD: Speech (0.78)</span></div></div><div class="flex items-center gap-space-sm"><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-1 bg-surface-container font-code-sm text-code-sm text-on-surface-variant"><span class="px-1.5 py-0.5 bg-surface-container-high text-secondary font-medium">[SPACE]</span><span>or</span><span class="px-1.5 py-0.5 bg-surface-container-high text-secondary font-medium">[H]</span><span>Keypoint Bookmark</span></div><button class="px-space-md py-2 font-label-md text-label-md bg-secondary text-on-secondary font-semibold hover:bg-secondary-fixed-dim transition-colors flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[18px]">star</span><span>Bookmark Keypoint</span></button><button class="px-space-md py-2 font-label-md text-label-md bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-colors flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[18px]">stop_circle</span><span>Stop</span></button><button class="px-space-md py-2 font-label-md text-label-md bg-primary-container text-on-primary-container hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[18px]">pause</span><span>Pause</span></button></div></div></div></body></html>

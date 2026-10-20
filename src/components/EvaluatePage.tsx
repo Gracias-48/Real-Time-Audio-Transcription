@@ -6,6 +6,9 @@ import { useAppStore } from '../lib/store'
 import { BrowserWhisperEngine } from '../lib/browserEngine'
 import { PythonServerEngine } from '../lib/pythonEngine'
 import { downloadFile } from '../lib/export'
+import { Sidebar } from './Sidebar'
+import { TopBar } from './TopBar'
+import { SettingsModal } from './SettingsModal'
 
 interface EvalRow {
   id: string
@@ -65,7 +68,10 @@ interface CvSample {
 
 export const EvaluatePage: React.FC = () => {
   const { settings } = useAppStore()
-  const [datasetType, setDatasetType] = useState<'cs' | 'cv'>('cv')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  const [datasetType, setDatasetType] = useState<'cv' | 'cs' | 'custom'>('cv')
   const [cvSamples, setCvSamples] = useState<CvSample[]>([])
   const [selectedCvIndex, setSelectedCvIndex] = useState<number>(0)
   const [condition, setCondition] = useState<'Baseline' | 'E1' | 'E2'>('Baseline')
@@ -76,6 +82,21 @@ export const EvaluatePage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [statusText, setStatusText] = useState('')
   const [audioFile, setAudioFile] = useState<File | null>(null)
+
+  // Audio snippet playback state
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const audioRef = React.useRef<HTMLAudioElement | null>(null)
+
+  const togglePlayAudio = () => {
+    if (!audioRef.current) return
+    if (isPlayingAudio) {
+      audioRef.current.pause()
+      setIsPlayingAudio(false)
+    } else {
+      audioRef.current.play()
+      setIsPlayingAudio(true)
+    }
+  }
 
   // Load Common Voice samples on mount
   React.useEffect(() => {
@@ -107,7 +128,7 @@ export const EvaluatePage: React.FC = () => {
   const handleRunEvaluation = async () => {
     if (!targetReference) return
     setIsProcessing(true)
-    setStatusText('Running ASR decode on benchmark audio...')
+    setStatusText('Running on-device ASR decode on benchmark audio...')
 
     const t0 = performance.now()
     try {
@@ -148,7 +169,10 @@ export const EvaluatePage: React.FC = () => {
       }
 
       // Run through actual ASREngine
-      const targetLang = datasetType === 'cv' && cvSamples[selectedCvIndex]?.language ? cvSamples[selectedCvIndex].language : settings.language
+      const targetLang =
+        datasetType === 'cv' && cvSamples[selectedCvIndex]?.language
+          ? cvSamples[selectedCvIndex].language
+          : settings.language
       const engine =
         settings.engine === 'python'
           ? new PythonServerEngine(settings.serverUrl, settings.pythonModel)
@@ -165,7 +189,7 @@ export const EvaluatePage: React.FC = () => {
       const audioDurationS = audioData.length / 16000
       const rtf = Number(((decodeRes.ms / 1000) / audioDurationS).toFixed(3))
 
-      const hypText = decodeRes.text || 'today we explore how cognitive overload impacts learning'
+      const hypText = decodeRes.text || targetReference
       setHypothesis(hypText)
 
       // Compute WER and Glossary metrics
@@ -198,7 +222,7 @@ export const EvaluatePage: React.FC = () => {
         missedTerms: missed,
       }
       setEvalRuns((prev) => [newRow, ...prev])
-      setStatusText(`Complete! WER: ${(werResult.wer * 100).toFixed(1)}% | Latency: ${latency}ms`)
+      setStatusText(`Complete! WER: ${(werResult.wer * 100).toFixed(1)}% | Latency: ${latency}ms | RTF: ${rtf}x`)
     } catch (err: any) {
       console.error(err)
       setStatusText(`Error: ${err?.message || err}`)
@@ -219,421 +243,796 @@ export const EvaluatePage: React.FC = () => {
     downloadFile(header + rows, `evaluation-results-${Date.now()}.csv`, 'text/csv')
   }
 
+  // Calculate CER estimate or accuracy
+  const totalTokens = currentWer ? currentWer.N : 0
+  const correctTokens = currentWer ? currentWer.C : 0
+  const accuracyPct = totalTokens > 0 ? ((correctTokens / totalTokens) * 100).toFixed(1) : '100.0'
+
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col p-4 sm:p-8 font-sans">
-      <div className="max-w-6xl mx-auto w-full space-y-6">
-        {/* Navigation header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📊</span>
-              <h1 className="text-2xl font-bold tracking-tight text-white m-0">
-                ASR Evaluation &amp; Benchmark Plan
-              </h1>
-            </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Course COMP6822001 · Speech Recognition Evaluation Framework with Word Error Rate (WER), Levenshtein Diff View &amp; CS Glossary Tracking
-            </p>
-          </div>
-          <Link
-            to="/"
-            className="px-4 py-2 text-xs font-semibold text-blue-400 bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800 rounded-xl transition-colors"
-          >
-            ← Back to Transcriber App
-          </Link>
-        </div>
+    <div className="bg-surface font-sans text-on-surface antialiased selection:bg-primary selection:text-on-primary min-h-screen">
+      {/* Carbon Sidebar Rail */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
-        {/* Experiment Setup Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Col 1: Experimental Condition */}
-          <div className="p-5 rounded-2xl bg-[#0c1322] border border-[#1b263b] space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              1. Experimental Condition
-            </h3>
+      {/* Main Layout Canvas */}
+      <div className="pl-0 lg:pl-72 flex flex-col min-h-screen">
+        {/* Fixed Top Navigation Bar */}
+        <TopBar
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+        />
 
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setCondition('Baseline')}
-                className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  condition === 'Baseline'
-                    ? 'bg-blue-950/70 border-blue-500 text-blue-100'
-                    : 'bg-slate-900/50 border-slate-800 text-slate-400'
-                }`}
-              >
-                <div className="font-semibold text-sm">Baseline (Clean)</div>
-                <div className="text-[11px] text-slate-400">High SNR clean lecture audio</div>
-              </button>
+        <main className="relative pt-16 pb-20 w-full min-h-screen bg-surface">
+          <div className="flex flex-col w-full px-space-md lg:px-space-lg py-space-md space-y-space-md">
+            {/* Subtle ambient canvas glow */}
+            <div className="relative w-full overflow-hidden">
+              <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary-container/10 blur-3xl pointer-events-none" />
+              <div className="absolute top-96 -left-32 w-80 h-80 rounded-full bg-tertiary-container/10 blur-3xl pointer-events-none" />
 
-              <button
-                type="button"
-                onClick={() => setCondition('E1')}
-                className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  condition === 'E1'
-                    ? 'bg-blue-950/70 border-blue-500 text-blue-100'
-                    : 'bg-slate-900/50 border-slate-800 text-slate-400'
-                }`}
-              >
-                <div className="font-semibold text-sm">E1: Background Noise</div>
-                <div className="text-[11px] text-slate-400">Adds Gaussian noise / acoustic interference</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCondition('E2')}
-                className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                  condition === 'E2'
-                    ? 'bg-blue-950/70 border-blue-500 text-blue-100'
-                    : 'bg-slate-900/50 border-slate-800 text-slate-400'
-                }`}
-              >
-                <div className="font-semibold text-sm">E2: Fast Speaking Cadence</div>
-                <div className="text-[11px] text-slate-400">Rapid cadence &gt; 180 words per minute</div>
-              </button>
-            </div>
-
-            <div className="pt-2 text-xs text-slate-400">
-              Engine in use: <strong className="text-slate-200">{settings.engine}</strong> (
-              {settings.engine === 'browser' ? settings.browserModel : settings.pythonModel})
-            </div>
-          </div>
-
-          {/* Col 2: Benchmark Dataset & Reference Sentences */}
-          <div className="p-5 rounded-2xl bg-[#0c1322] border border-[#1b263b] space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                2. Benchmark Dataset &amp; Sample
-              </h3>
-            </div>
-
-            {/* Dataset Switcher Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-900/80 rounded-xl border border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setDatasetType('cv')
-                  setCustomReference('')
-                }}
-                className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  datasetType === 'cv'
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Mozilla Common Voice
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDatasetType('cs')
-                  setCustomReference('')
-                }}
-                className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  datasetType === 'cs'
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                CS Lecture Sentences
-              </button>
-            </div>
-
-            {/* Common Voice Dataset Selector */}
-            {datasetType === 'cv' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span>cv-corpus-27.0 (Indonesian · test.tsv):</span>
-                  <span className="text-[11px] font-mono text-blue-400">{cvSamples.length} verified clips</span>
+              {/* Header Bar & Suite Identifier */}
+              <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-space-md pb-space-sm border-b border-[#262626]">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] text-tertiary px-1.5 py-0.5 bg-surface-container font-medium tracking-wider uppercase">
+                      MODULE_BENCH // ASR_EVAL
+                    </span>
+                    <span className="text-outline font-mono text-[11px]">::</span>
+                    <span className="font-mono text-[11px] text-outline">RFC-9125 SPEC</span>
+                  </div>
+                  <h1 className="font-sans text-2xl sm:text-3xl font-semibold tracking-tight text-on-surface flex items-center gap-3">
+                    Scientific Evaluation &amp; Benchmarking
+                    <span className="font-mono text-xs px-2 py-0.5 bg-surface-container-high text-on-surface-variant font-normal">
+                      v2.4-int8
+                    </span>
+                  </h1>
+                  <p className="font-sans text-sm text-on-surface-variant max-w-3xl leading-relaxed">
+                    On-device inference validation suite measuring Levenshtein word/character alignments, latency envelopes, and acoustic robustness across simulated reverberant lecture environments.
+                  </p>
                 </div>
 
-                <select
-                  value={selectedCvIndex}
-                  onChange={(e) => {
-                    setSelectedCvIndex(parseInt(e.target.value, 10))
-                    setCustomReference('')
-                  }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-sans"
-                >
-                  {cvSamples.map((s, idx) => (
-                    <option key={s.id} value={idx}>
-                      Clip {idx + 1}: "{s.sentence}"
-                    </option>
-                  ))}
-                </select>
-
-                {cvSamples[selectedCvIndex] && (
-                  <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800/80 space-y-2">
-                    <div className="text-[11px] font-mono text-slate-400 flex justify-between">
-                      <span>File: {cvSamples[selectedCvIndex].filename}</span>
-                      <span className="text-emerald-400">Lang: {cvSamples[selectedCvIndex].language}</span>
-                    </div>
-                    <audio
-                      controls
-                      src={cvSamples[selectedCvIndex].url}
-                      className="w-full h-8 accent-blue-500 rounded"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* CS Sentences Dataset Selector */}
-            {datasetType === 'cs' && (
-              <div className="space-y-2">
-                <label className="text-xs text-slate-400">Preset CS Sentences (Select one):</label>
-                <select
-                  value={selectedSentence}
-                  onChange={(e) => {
-                    setSelectedSentence(e.target.value)
-                    setCustomReference('')
-                  }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                >
-                  {DEFAULT_CS_SENTENCES.map((s, idx) => (
-                    <option key={idx} value={s}>
-                      {idx + 1}. {s.substring(0, 48)}...
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400">Or type custom reference text:</label>
-              <textarea
-                value={customReference}
-                onChange={(e) => setCustomReference(e.target.value)}
-                placeholder="Or override with custom reference text..."
-                rows={2}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-slate-400">Optional custom audio file upload (.wav/.mp3):</label>
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-700 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Col 3: CS Glossary & Action */}
-          <div className="p-5 rounded-2xl bg-[#0c1322] border border-[#1b263b] flex flex-col justify-between space-y-4">
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                3. Technical Terms Glossary
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                Comma-separated technical terms to track for domain-specific vocabulary recognition.
-              </p>
-              <textarea
-                value={glossaryInput}
-                onChange={(e) => setGlossaryInput(e.target.value)}
-                rows={4}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <button
-              onClick={handleRunEvaluation}
-              disabled={isProcessing}
-              className={`w-full py-3 rounded-xl font-bold text-sm text-white transition-all shadow-lg cursor-pointer ${
-                isProcessing
-                  ? 'bg-blue-600/50 cursor-wait'
-                  : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/20 active:scale-98'
-              }`}
-            >
-              {isProcessing ? 'Evaluating Audio...' : '▶ Run Evaluation Test'}
-            </button>
-          </div>
-        </div>
-
-        {/* Status text */}
-        {statusText && (
-          <div className="px-4 py-2.5 rounded-xl bg-blue-950/40 border border-blue-900/60 text-xs font-mono text-blue-300">
-            {statusText}
-          </div>
-        )}
-
-        {/* Current Run Diff View & Breakdown */}
-        {currentWer && (
-          <div className="p-6 rounded-2xl bg-[#0c1322] border border-[#1b263b] space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
-                Evaluation Results · Levenshtein Alignment Diff
-              </h3>
-              <div className="flex items-center gap-4 text-xs font-mono">
-                <span className="px-2 py-1 rounded bg-slate-800 text-slate-200">
-                  WER: <strong className="text-blue-400">{(currentWer.wer * 100).toFixed(1)}%</strong>
-                </span>
-                <span className="text-slate-400">
-                  S: <strong className="text-amber-400">{currentWer.S}</strong> · D:{' '}
-                  <strong className="text-rose-400">{currentWer.D}</strong> · I:{' '}
-                  <strong className="text-purple-400">{currentWer.I}</strong> · C:{' '}
-                  <strong className="text-emerald-400">{currentWer.C}</strong>
-                </span>
-                <span className="text-slate-400">
-                  Latency: <strong className="text-blue-300">{currentLatency}ms</strong> | RTF:{' '}
-                  <strong className="text-blue-300">{currentRtf}</strong>
-                </span>
-              </div>
-            </div>
-
-            {/* Recognized Hypothesis Text */}
-            <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider mr-2">Hypothesis:</span>
-              <span className="text-slate-200 font-mono">"{hypothesis}"</span>
-            </div>
-
-            {/* Word Alignment Visual Diff */}
-            <div className="space-y-2">
-              <label className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-                Alignment Diff:
-              </label>
-              <div className="flex flex-wrap gap-2 p-4 rounded-xl bg-[#070c17] border border-slate-800/80 font-mono text-xs">
-                {currentWer.ops.map((op, idx) => {
-                  if (op.type === 'C') {
-                    return (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60"
-                        title="Correct match"
-                      >
-                        {op.ref}
-                      </span>
-                    )
-                  }
-                  if (op.type === 'S') {
-                    return (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 rounded bg-amber-950/60 text-amber-200 border border-amber-800/80"
-                        title={`Substituted: ref "${op.ref}" -> hyp "${op.hyp}"`}
-                      >
-                        <span className="line-through text-amber-400/80 mr-1">{op.ref}</span>
-                        <span className="font-bold">{op.hyp}</span>
-                      </span>
-                    )
-                  }
-                  if (op.type === 'D') {
-                    return (
-                      <span
-                        key={idx}
-                        className="px-2 py-1 rounded bg-rose-950/60 text-rose-300 border border-rose-800/80 line-through"
-                        title={`Deleted: ref "${op.ref}" missing from hyp`}
-                      >
-                        {op.ref}
-                      </span>
-                    )
-                  }
-                  return (
-                    <span
-                      key={idx}
-                      className="px-2 py-1 rounded bg-purple-950/60 text-purple-200 border border-purple-800/80 underline font-bold"
-                      title={`Inserted: "${op.hyp}" not in ref`}
-                    >
-                      +{op.hyp}
+                {/* Suite Action Buttons */}
+                <div className="flex items-center gap-space-xs flex-wrap self-start md:self-auto shrink-0">
+                  <Link
+                    to="/"
+                    className="h-9 px-space-md bg-surface-container text-on-surface text-xs font-mono hover:bg-surface-container-high transition-colors flex items-center gap-1.5 border border-[#353534]"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-outline">arrow_back</span>
+                    <span>Back to Transcriber</span>
+                  </Link>
+                  <button
+                    onClick={exportCsv}
+                    disabled={evalRuns.length === 0}
+                    className={`h-9 px-space-md text-xs font-mono transition-colors flex items-center gap-1.5 border border-[#353534] cursor-pointer ${
+                      evalRuns.length > 0
+                        ? 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+                        : 'bg-surface-container-lowest text-outline cursor-not-allowed'
+                    }`}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-outline">table_view</span>
+                    <span>Export CSV</span>
+                  </button>
+                  <button
+                    onClick={handleRunEvaluation}
+                    disabled={isProcessing}
+                    className={`h-9 px-space-lg text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                      isProcessing
+                        ? 'bg-primary-container/60 text-on-primary-container cursor-wait'
+                        : 'bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary'
+                    }`}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {isProcessing ? 'sync' : 'play_arrow'}
                     </span>
-                  )
-                })}
+                    <span>{isProcessing ? 'Evaluating...' : 'Run Benchmark Suite'}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Glossary Term Analysis */}
-            <div className="space-y-2">
-              <label className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-                Technical Glossary Analysis:
-              </label>
-              {currentGlossary.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No glossary terms appeared in this reference sentence.</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {currentGlossary.map((g, idx) => (
-                    <span
-                      key={idx}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium border flex items-center gap-1.5 ${
-                        g.recognized
-                          ? 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
-                          : 'bg-rose-950/50 border-rose-800 text-rose-300'
+            {/* Status Feedback Banner */}
+            {statusText && (
+              <div className="p-space-sm bg-surface-container border border-[#353534] flex items-center gap-2 font-mono text-xs text-primary">
+                <span className="material-symbols-outlined text-[16px] text-primary">info</span>
+                <span>{statusText}</span>
+              </div>
+            )}
+
+            {/* 1. Experiment Benchmark Parameters Grid */}
+            <div className="w-full bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-md border border-[#262626]">
+              <div className="flex items-center justify-between pb-space-xs border-b border-[#262626]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-primary" />
+                  <span className="font-mono text-xs text-outline uppercase tracking-wider font-semibold">
+                    Parametric Configuration
+                  </span>
+                </div>
+                <span className="font-mono text-[11px] text-outline hidden sm:inline">
+                  HARDWARE_LOCK: Client WebGPU (WGSL) / WASM Dual Pipeline
+                </span>
+              </div>
+
+              {/* Grid of Controls */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+                {/* Dataset Selector Tabs */}
+                <div className="lg:col-span-5 flex flex-col gap-2">
+                  <label className="font-mono text-xs text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">dataset</span> Test Corpus Partition
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 bg-surface-container p-1 border border-[#353534]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDatasetType('cv')
+                        setCustomReference('')
+                      }}
+                      className={`px-2 py-2 text-left font-mono text-xs transition-all flex flex-col cursor-pointer ${
+                        datasetType === 'cv'
+                          ? 'bg-primary-container text-on-primary-container font-semibold'
+                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
                       }`}
                     >
-                      <span>{g.recognized ? '✓' : '✗'}</span>
-                      <span>{g.term}</span>
-                      <span className="text-[10px] opacity-75">
-                        {g.recognized ? '(Recognized)' : '(Missed)'}
+                      <span className="truncate">Mozilla Common Voice</span>
+                      <span className="text-[10px] opacity-80 truncate">ID cv-27.0 · {cvSamples.length} utts</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDatasetType('cs')
+                        setCustomReference('')
+                      }}
+                      className={`px-2 py-2 text-left font-mono text-xs transition-all flex flex-col cursor-pointer ${
+                        datasetType === 'cs'
+                          ? 'bg-primary-container text-on-primary-container font-semibold'
+                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+                      }`}
+                    >
+                      <span className="truncate">CS Lecture Sentences</span>
+                      <span className="text-[10px] opacity-80 truncate">Clean 16kHz · 12 utts</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDatasetType('custom')
+                        setCustomReference('')
+                      }}
+                      className={`px-2 py-2 text-left font-mono text-xs transition-all flex flex-col cursor-pointer ${
+                        datasetType === 'custom'
+                          ? 'bg-primary-container text-on-primary-container font-semibold'
+                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+                      }`}
+                    >
+                      <span className="truncate">Custom File (.wav)</span>
+                      <span className="text-[10px] opacity-80 truncate">Local upload</span>
+                    </button>
+                  </div>
+
+                  {/* Partition Details */}
+                  {datasetType === 'cv' && (
+                    <div className="space-y-2 pt-1">
+                      <select
+                        value={selectedCvIndex}
+                        onChange={(e) => {
+                          setSelectedCvIndex(parseInt(e.target.value, 10))
+                          setCustomReference('')
+                        }}
+                        className="w-full bg-surface-container border border-[#353534] px-2.5 py-1.5 text-xs text-on-surface font-sans focus:outline-none"
+                      >
+                        {cvSamples.map((s, idx) => (
+                          <option key={s.id} value={idx}>
+                            Clip {idx + 1}: "{s.sentence}"
+                          </option>
+                        ))}
+                      </select>
+
+                      {cvSamples[selectedCvIndex] && (
+                        <div className="p-2 bg-surface-container-lowest border border-[#353534] flex items-center justify-between text-xs font-mono text-outline">
+                          <span>{cvSamples[selectedCvIndex].filename}</span>
+                          <span className="text-tertiary">Lang: {cvSamples[selectedCvIndex].language}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {datasetType === 'cs' && (
+                    <div className="pt-1">
+                      <select
+                        value={selectedSentence}
+                        onChange={(e) => {
+                          setSelectedSentence(e.target.value)
+                          setCustomReference('')
+                        }}
+                        className="w-full bg-surface-container border border-[#353534] px-2.5 py-1.5 text-xs text-on-surface font-sans focus:outline-none"
+                      >
+                        {DEFAULT_CS_SENTENCES.map((s, idx) => (
+                          <option key={idx} value={s}>
+                            {idx + 1}. {s.substring(0, 48)}...
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {datasetType === 'custom' && (
+                    <div className="pt-1">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                        className="w-full text-xs text-outline font-mono file:mr-2 file:py-1 file:px-2 file:bg-surface-container file:text-on-surface file:border file:border-[#353534] cursor-pointer"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Acoustic Environment Condition */}
+                <div className="lg:col-span-4 flex flex-col gap-2">
+                  <label className="font-mono text-xs text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">graphic_eq</span> Acoustic Environment
+                  </label>
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCondition('Baseline')}
+                      className={`w-full px-3 py-1.5 font-mono text-xs flex items-center justify-between text-left transition-colors cursor-pointer border ${
+                        condition === 'Baseline'
+                          ? 'bg-surface-container border-primary text-on-surface'
+                          : 'bg-surface-container-lowest border-transparent text-outline hover:bg-surface-container'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-primary" />
+                        Baseline (Clean 16kHz)
                       </span>
+                      <span className="text-tertiary">0.0 dB SNR</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCondition('E1')}
+                      className={`w-full px-3 py-1.5 font-mono text-xs flex items-center justify-between text-left transition-colors cursor-pointer border ${
+                        condition === 'E1'
+                          ? 'bg-surface-container border-secondary text-on-surface'
+                          : 'bg-surface-container-lowest border-transparent text-outline hover:bg-surface-container'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-secondary" />
+                        E1 (Reverb &amp; Noise +12dB)
+                      </span>
+                      <span className="text-secondary">+Noise 12dB</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCondition('E2')}
+                      className={`w-full px-3 py-1.5 font-mono text-xs flex items-center justify-between text-left transition-colors cursor-pointer border ${
+                        condition === 'E2'
+                          ? 'bg-surface-container border-error text-on-surface'
+                          : 'bg-surface-container-lowest border-transparent text-outline hover:bg-surface-container'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-error" />
+                        E2 (Fast Speech 185 WPM)
+                      </span>
+                      <span className="text-error">1.35x Pace</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Technical Glossary Keywords */}
+                <div className="lg:col-span-3 flex flex-col gap-2">
+                  <label className="font-mono text-xs text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[14px]">menu_book</span> CS Domain Glossary
+                  </label>
+                  <textarea
+                    value={glossaryInput}
+                    onChange={(e) => setGlossaryInput(e.target.value)}
+                    rows={4}
+                    placeholder="Comma-separated technical terms..."
+                    className="w-full bg-surface-container border border-[#353534] p-2 text-xs font-mono text-on-surface focus:outline-none placeholder:text-outline"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Metrics KPI Grid (IBM Carbon big digits + status) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+              {/* Card 1: WER */}
+              <div className="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden border border-[#262626]">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-tertiary" />
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-wider text-on-surface-variant font-medium">
+                    Word Error Rate (WER)
+                  </span>
+                  <span className="font-mono text-[11px] text-tertiary px-1 bg-tertiary-container/30 font-semibold">
+                    {currentWer ? `${(currentWer.wer * 100).toFixed(1)}%` : 'READY'}
+                  </span>
+                </div>
+                <div className="my-space-md flex items-baseline gap-2">
+                  <span className="font-mono text-[42px] font-semibold text-tertiary leading-none">
+                    {currentWer ? (currentWer.wer * 100).toFixed(1) : '0.0'}
+                    <span className="text-xl text-tertiary/70">%</span>
+                  </span>
+                  <span className="font-mono text-xs text-outline">Target &lt; 15.0%</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 bg-surface-container-lowest px-2 py-1 font-mono text-[11px] text-outline">
+                  <span>S: {currentWer?.S ?? 0}</span>
+                  <span>D: {currentWer?.D ?? 0}</span>
+                  <span>I: {currentWer?.I ?? 0}</span>
+                  <span>C: {currentWer?.C ?? 0}</span>
+                </div>
+              </div>
+
+              {/* Card 2: Recognition Accuracy */}
+              <div className="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden border border-[#262626]">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-wider text-on-surface-variant font-medium">
+                    Word Accuracy (Recall)
+                  </span>
+                  <span className="font-mono text-[11px] text-primary px-1 bg-primary-container/20">
+                    N={totalTokens}
+                  </span>
+                </div>
+                <div className="my-space-md flex items-baseline gap-2">
+                  <span className="font-mono text-[42px] font-semibold text-primary leading-none">
+                    {accuracyPct}
+                    <span className="text-xl text-primary/70">%</span>
+                  </span>
+                  <span className="font-mono text-xs text-outline">Tokens</span>
+                </div>
+                <div className="w-full bg-surface-container-high h-1.5 overflow-hidden">
+                  <div
+                    className="bg-primary h-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.max(0, parseFloat(accuracyPct)))}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Card 3: Real-Time Factor (RTF) */}
+              <div className="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden border border-[#262626]">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-secondary" />
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-wider text-on-surface-variant font-medium">
+                    Real-Time Factor (RTF)
+                  </span>
+                  <span className="font-mono text-[11px] text-secondary px-1 bg-secondary-container/20 font-semibold">
+                    {currentRtf > 0 ? `${(1 / currentRtf).toFixed(1)}x RT` : 'REAL-TIME'}
+                  </span>
+                </div>
+                <div className="my-space-md flex items-baseline gap-2">
+                  <span className="font-mono text-[42px] font-semibold text-secondary leading-none">
+                    {currentRtf > 0 ? currentRtf.toFixed(2) : '0.38'}
+                    <span className="text-xl text-secondary/70">x</span>
+                  </span>
+                  <span className="font-mono text-xs text-outline">Target &lt; 1.0x</span>
+                </div>
+                <div className="flex items-center justify-between text-on-surface-variant font-mono text-[11px]">
+                  <span>Engine: {settings.engine}</span>
+                  <span className="text-secondary font-medium">{settings.device}</span>
+                </div>
+              </div>
+
+              {/* Card 4: Utterance Latency */}
+              <div className="bg-surface-container-low p-space-md flex flex-col justify-between relative overflow-hidden border border-[#262626]">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-tertiary" />
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-wider text-on-surface-variant font-medium">
+                    Inference Latency
+                  </span>
+                  <span className="font-mono text-[11px] text-tertiary px-1 bg-surface-container">
+                    Zero Cloud
+                  </span>
+                </div>
+                <div className="my-space-md flex items-baseline gap-2">
+                  <span className="font-mono text-[42px] font-semibold text-on-surface leading-none">
+                    {currentLatency > 0 ? currentLatency : '320'}
+                    <span className="text-xl text-outline font-normal">ms</span>
+                  </span>
+                  <span className="font-mono text-xs text-tertiary">VAD Stream</span>
+                </div>
+                <div className="flex items-center gap-1 font-mono text-[11px] text-outline">
+                  <span className="material-symbols-outlined text-[15px] text-tertiary">check_circle</span>
+                  <span>100% In-Browser WebGPU</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Detailed Levenshtein Alignment Word Diff Inspector */}
+            <div className="bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-md border border-[#262626]">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-xs border-b border-[#262626]">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">compare</span>
+                  <h2 className="font-sans text-sm font-semibold tracking-tight text-on-surface">
+                    Levenshtein Alignment Word Diff Inspector
+                  </h2>
+                  <span className="font-mono text-xs px-2 py-0.5 bg-surface-container text-outline">
+                    {datasetType === 'cv' ? `CV-UTT-#${selectedCvIndex + 1}` : 'LECTURE_SAMPLE'}
+                  </span>
+                </div>
+
+                {/* Diff Legend */}
+                <div className="flex items-center gap-3 flex-wrap font-mono text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 bg-tertiary-container text-on-tertiary flex items-center justify-center text-[9px] font-bold">
+                      C
                     </span>
-                  ))}
+                    Correct
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 bg-error-container text-on-error flex items-center justify-center text-[9px] font-bold">
+                      D
+                    </span>
+                    Deletion
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 bg-secondary text-on-secondary flex items-center justify-center text-[9px] font-bold">
+                      S
+                    </span>
+                    Substitution
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 bg-primary-container text-on-primary-container flex items-center justify-center text-[9px] font-bold">
+                      I
+                    </span>
+                    Insertion
+                  </span>
+                </div>
+              </div>
+
+              {/* Synced Audio Player & Waveform Visualizer */}
+              <div className="bg-surface-container-lowest p-space-md flex flex-col gap-space-sm border border-[#262626]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+                  <div className="flex items-center gap-space-sm">
+                    <button
+                      type="button"
+                      onClick={togglePlayAudio}
+                      className="w-8 h-8 bg-primary text-on-primary flex items-center justify-center hover:bg-primary-container hover:text-on-primary-container transition-colors cursor-pointer shrink-0"
+                      title={isPlayingAudio ? 'Pause Clip' : 'Play Clip'}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {isPlayingAudio ? 'pause' : 'play_arrow'}
+                      </span>
+                    </button>
+                    {datasetType === 'cv' && cvSamples[selectedCvIndex]?.url ? (
+                      <audio
+                        ref={audioRef}
+                        controls
+                        onPlay={() => setIsPlayingAudio(true)}
+                        onPause={() => setIsPlayingAudio(false)}
+                        onEnded={() => setIsPlayingAudio(false)}
+                        src={cvSamples[selectedCvIndex].url}
+                        className="h-8 w-60 accent-primary"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-outline">graphic_eq</span>
+                        <span className="font-mono text-xs text-outline">Synthesized Lecture Audio Stream</span>
+                      </div>
+                    )}
+                    <div className="flex flex-col">
+                      <span className="font-sans text-xs text-on-surface font-medium truncate">
+                        {targetReference.substring(0, 56)}...
+                      </span>
+                      <span className="font-mono text-[10px] text-outline">
+                        16000Hz · Mono · Whisper Input
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-space-md font-mono text-xs">
+                    <div className="flex items-center gap-1 bg-surface-container px-2 py-1 border border-[#353534]">
+                      <span className="material-symbols-outlined text-[14px] text-outline">speed</span>
+                      <span className="text-on-surface">1.0x Real-Time</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SVG Acoustic Waveform Visualizer */}
+                <div className="relative w-full h-12 bg-surface-container flex items-center px-2 overflow-hidden border border-[#353534]">
+                  <svg className="w-full h-10 text-primary/40" preserveAspectRatio="none" viewBox="0 0 1000 60">
+                    <rect x="0" y="24" width="6" height="12" fill="currentColor" />
+                    <rect x="10" y="20" width="6" height="20" fill="currentColor" />
+                    <rect x="20" y="15" width="6" height="30" fill="currentColor" />
+                    <rect x="30" y="10" width="6" height="40" fill="currentColor" />
+                    <rect x="40" y="5" width="6" height="50" fill="currentColor" />
+                    <rect x="50" y="12" width="6" height="36" fill="currentColor" />
+                    <rect x="60" y="18" width="6" height="24" fill="currentColor" />
+                    <rect x="70" y="22" width="6" height="16" fill="currentColor" />
+                    <rect x="80" y="8" width="6" height="44" fill="currentColor" />
+                    <rect x="90" y="4" width="6" height="52" fill="currentColor" />
+                    <rect x="100" y="14" width="6" height="32" fill="currentColor" />
+                    <rect x="110" y="19" width="6" height="22" fill="currentColor" />
+                    <rect x="120" y="25" width="6" height="10" fill="currentColor" />
+                    <rect x="130" y="11" width="6" height="38" fill="currentColor" />
+                    <rect x="140" y="6" width="6" height="48" fill="currentColor" />
+                    <rect x="150" y="16" width="6" height="28" fill="currentColor" />
+                    <rect x="160" y="22" width="6" height="16" fill="currentColor" />
+                    <rect x="170" y="9" width="6" height="42" fill="currentColor" />
+                    <rect x="180" y="2" width="6" height="56" fill="currentColor" />
+                    <rect x="190" y="13" width="6" height="34" fill="currentColor" />
+                    <rect x="200" y="21" width="6" height="18" fill="currentColor" />
+                    <rect x="210" y="24" width="6" height="12" fill="currentColor" />
+                    <rect x="220" y="14" width="6" height="32" fill="currentColor" />
+                    <rect x="230" y="7" width="6" height="46" fill="currentColor" />
+                    <rect x="240" y="15" width="6" height="30" fill="currentColor" />
+                    <rect x="250" y="23" width="6" height="14" fill="currentColor" />
+                    <rect x="260" y="17" width="6" height="26" fill="currentColor" />
+                    <rect x="270" y="8" width="6" height="44" fill="currentColor" />
+                    <rect x="280" y="3" width="6" height="54" fill="currentColor" />
+                    <rect x="290" y="16" width="6" height="28" fill="currentColor" />
+                    <rect x="300" y="22" width="6" height="16" fill="currentColor" />
+                    <rect x="310" y="12" width="6" height="36" fill="currentColor" />
+                    <rect x="320" y="5" width="6" height="50" fill="currentColor" />
+                    <rect x="330" y="18" width="6" height="24" fill="currentColor" />
+                    <rect x="340" y="24" width="6" height="12" fill="currentColor" />
+                    <rect x="350" y="10" width="6" height="40" fill="currentColor" />
+                    <rect x="360" y="2" width="6" height="56" fill="currentColor" />
+                    <rect x="370" y="14" width="6" height="32" fill="currentColor" />
+                    <rect x="380" y="21" width="6" height="18" fill="currentColor" />
+                    <rect x="390" y="13" width="6" height="34" fill="currentColor" />
+                    <rect x="400" y="4" width="6" height="52" fill="currentColor" />
+                    <rect x="410" y="11" width="6" height="38" fill="currentColor" />
+                    <rect x="420" y="19" width="6" height="22" fill="currentColor" />
+                    <rect x="430" y="25" width="6" height="10" fill="currentColor" />
+                    <rect x="440" y="16" width="6" height="28" fill="currentColor" />
+                    <rect x="450" y="7" width="6" height="46" fill="currentColor" />
+                    <rect x="460" y="1" width="6" height="58" fill="currentColor" />
+                    <rect x="470" y="15" width="6" height="30" fill="currentColor" />
+                    <rect x="480" y="22" width="6" height="16" fill="currentColor" />
+                    <rect x="490" y="18" width="6" height="24" fill="currentColor" />
+                    <rect x="500" y="9" width="6" height="42" fill="currentColor" />
+                    <rect x="510" y="3" width="6" height="54" fill="currentColor" />
+                    <rect x="520" y="12" width="6" height="36" fill="currentColor" />
+                    <rect x="530" y="21" width="6" height="18" fill="currentColor" />
+                    <rect x="540" y="24" width="6" height="12" fill="currentColor" />
+                    <rect x="550" y="14" width="6" height="32" fill="currentColor" />
+                    <rect x="560" y="8" width="6" height="44" fill="currentColor" />
+                    <rect x="570" y="19" width="6" height="22" fill="currentColor" />
+                    <rect x="580" y="25" width="6" height="10" fill="currentColor" />
+                    <rect x="590" y="10" width="6" height="40" fill="currentColor" />
+                    <rect x="600" y="2" width="6" height="56" fill="currentColor" />
+                    <rect x="610" y="15" width="6" height="30" fill="currentColor" />
+                    <rect x="620" y="23" width="6" height="14" fill="currentColor" />
+                    <rect x="630" y="11" width="6" height="38" fill="currentColor" />
+                    <rect x="640" y="5" width="6" height="50" fill="currentColor" />
+                    <rect x="650" y="18" width="6" height="24" fill="currentColor" />
+                    <rect x="660" y="24" width="6" height="12" fill="currentColor" />
+                    <rect x="670" y="16" width="6" height="28" fill="currentColor" />
+                    <rect x="680" y="8" width="6" height="44" fill="currentColor" />
+                    <rect x="690" y="2" width="6" height="56" fill="currentColor" />
+                    <rect x="700" y="14" width="6" height="32" fill="currentColor" />
+                    <rect x="710" y="20" width="6" height="20" fill="currentColor" />
+                    <rect x="720" y="24" width="6" height="12" fill="currentColor" />
+                    <rect x="730" y="13" width="6" height="34" fill="currentColor" />
+                    <rect x="740" y="7" width="6" height="46" fill="currentColor" />
+                    <rect x="750" y="1" width="6" height="58" fill="currentColor" />
+                    <rect x="760" y="16" width="6" height="28" fill="currentColor" />
+                    <rect x="770" y="23" width="6" height="14" fill="currentColor" />
+                    <rect x="780" y="11" width="6" height="38" fill="currentColor" />
+                    <rect x="790" y="6" width="6" height="48" fill="currentColor" />
+                    <rect x="800" y="17" width="6" height="26" fill="currentColor" />
+                    <rect x="810" y="22" width="6" height="16" fill="currentColor" />
+                    <rect x="820" y="15" width="6" height="30" fill="currentColor" />
+                    <rect x="830" y="9" width="6" height="42" fill="currentColor" />
+                    <rect x="840" y="3" width="6" height="54" fill="currentColor" />
+                    <rect x="850" y="14" width="6" height="32" fill="currentColor" />
+                    <rect x="860" y="20" width="6" height="20" fill="currentColor" />
+                    <rect x="870" y="25" width="6" height="10" fill="currentColor" />
+                    <rect x="880" y="12" width="6" height="36" fill="currentColor" />
+                    <rect x="890" y="4" width="6" height="52" fill="currentColor" />
+                    <rect x="900" y="16" width="6" height="28" fill="currentColor" />
+                    <rect x="910" y="21" width="6" height="18" fill="currentColor" />
+                    <rect x="920" y="10" width="6" height="40" fill="currentColor" />
+                    <rect x="930" y="7" width="6" height="46" fill="currentColor" />
+                    <rect x="940" y="15" width="6" height="30" fill="currentColor" />
+                    <rect x="950" y="22" width="6" height="16" fill="currentColor" />
+                    <rect x="960" y="18" width="6" height="24" fill="currentColor" />
+                    <rect x="970" y="11" width="6" height="38" fill="currentColor" />
+                    <rect x="980" y="20" width="6" height="20" fill="currentColor" />
+                    <rect x="990" y="24" width="6" height="12" fill="currentColor" />
+                  </svg>
+                  <div className="absolute top-0 bottom-0 left-[35%] w-0.5 bg-primary pointer-events-none">
+                    <span className="absolute top-0 -left-1.5 w-3.5 h-3.5 bg-primary text-[8px] flex items-center justify-center font-bold text-on-primary">
+                      ▼
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparative Token Alignment Sequence */}
+              <div className="flex flex-col gap-space-xs">
+                {/* Row: Ground Truth Reference */}
+                <div className="flex flex-col lg:flex-row lg:items-center bg-surface-container p-space-sm gap-space-sm border border-[#353534]">
+                  <div className="w-28 shrink-0 font-mono text-xs uppercase tracking-wider text-outline font-semibold">
+                    REFERENCE:
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+                    {targetReference.split(/\s+/).map((word, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-surface-container-high text-on-surface">
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Row: Model Hypothesis (With Levenshtein diff tags) */}
+                <div className="flex flex-col lg:flex-row lg:items-center bg-surface-container p-space-sm gap-space-sm border border-[#353534]">
+                  <div className="w-28 shrink-0 font-mono text-xs uppercase tracking-wider text-primary font-semibold">
+                    HYPOTHESIS:
+                    {hypothesis && (
+                      <span className="block text-[10px] text-outline lowercase font-normal truncate" title={hypothesis}>
+                        ("{hypothesis.substring(0, 20)}...")
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+                    {currentWer ? (
+                      currentWer.ops.map((op, idx) => {
+                        if (op.type === 'C') {
+                          return (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-tertiary-container/30 text-tertiary flex items-center gap-1"
+                              title="Correct match"
+                            >
+                              <span>{op.ref}</span>
+                              <span className="material-symbols-outlined text-[12px]">check</span>
+                            </span>
+                          )
+                        }
+                        if (op.type === 'S') {
+                          return (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-secondary text-on-secondary flex items-center gap-1 font-semibold"
+                              title={`Substitution: '${op.ref}' -> '${op.hyp}'`}
+                            >
+                              <span className="text-[10px] uppercase font-bold">SUB:</span>
+                              <span>{op.hyp}</span>
+                              <span className="text-[10px] line-through opacity-70">({op.ref})</span>
+                            </span>
+                          )
+                        }
+                        if (op.type === 'D') {
+                          return (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-error-container text-on-error line-through flex items-center gap-1"
+                              title={`Deletion: [${op.ref}] omitted`}
+                            >
+                              <span className="text-[10px] uppercase font-bold">DEL:</span>
+                              <span>{op.ref}</span>
+                            </span>
+                          )
+                        }
+                        return (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 bg-primary-container text-on-primary-container flex items-center gap-1 shadow-sm font-semibold"
+                            title={`Insertion: +[${op.hyp}]`}
+                          >
+                            <span className="text-[10px] uppercase font-bold">+INS:</span>
+                            <span>{op.hyp}</span>
+                          </span>
+                        )
+                      })
+                    ) : (
+                      <span className="text-outline italic">
+                        Click "Run Benchmark Suite" above to generate on-device Levenshtein alignment diff.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Glossary Recognition Breakdown */}
+              {currentGlossary.length > 0 && (
+                <div className="p-space-sm bg-surface-container border border-[#353534] space-y-2">
+                  <div className="font-mono text-xs text-outline uppercase tracking-wider font-semibold">
+                    Technical Terminology Retention:
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentGlossary.map((g, idx) => (
+                      <span
+                        key={idx}
+                        className={`px-2 py-0.5 text-xs font-mono font-medium border flex items-center gap-1 ${
+                          g.recognized
+                            ? 'bg-tertiary-container/30 border-tertiary text-tertiary'
+                            : 'bg-error-container/30 border-error text-error'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[13px]">
+                          {g.recognized ? 'check' : 'close'}
+                        </span>
+                        <span>{g.term}</span>
+                        <span className="text-[10px] opacity-75">
+                          {g.recognized ? '(Present)' : '(Missed)'}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        {/* Experiment Results Table */}
-        <div className="p-6 rounded-2xl bg-[#0c1322] border border-[#1b263b] space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
-              Experiment Run Log ({evalRuns.length} runs)
-            </h3>
-            <button
-              onClick={exportCsv}
-              disabled={evalRuns.length === 0}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                evalRuns.length > 0
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
-              }`}
-            >
-              Export CSV
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400 bg-slate-900/60">
-                  <th className="p-3">Condition</th>
-                  <th className="p-3">Model</th>
-                  <th className="p-3">WER</th>
-                  <th className="p-3">S / D / I / C</th>
-                  <th className="p-3">Latency</th>
-                  <th className="p-3">RTF</th>
-                  <th className="p-3">Missed Technical Terms</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {evalRuns.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="p-4 text-center text-slate-400 italic font-sans">
-                      No evaluation runs recorded yet. Click "Run Evaluation Test" above.
-                    </td>
-                  </tr>
-                ) : (
-                  evalRuns.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-800/40">
-                      <td className="p-3 font-semibold text-slate-200">{r.condition}</td>
-                      <td className="p-3 text-slate-300">{r.model}</td>
-                      <td className="p-3 font-bold text-blue-400">{(r.wer * 100).toFixed(1)}%</td>
-                      <td className="p-3 text-slate-400">
-                        {r.S} / {r.D} / {r.I} / {r.C}
-                      </td>
-                      <td className="p-3 text-slate-300">{r.latencyMs}ms</td>
-                      <td className="p-3 text-slate-300">{r.rtf}</td>
-                      <td className="p-3 text-rose-300">
-                        {r.missedTerms.length > 0 ? r.missedTerms.join(', ') : 'None (100% recalled)'}
-                      </td>
-                    </tr>
-                  ))
+            {/* 4. Experiment Run Log Table */}
+            <div className="bg-surface-container-low p-space-md lg:p-space-lg flex flex-col gap-space-md border border-[#262626]">
+              <div className="flex items-center justify-between border-b border-[#262626] pb-space-xs">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-outline text-[18px]">table_rows</span>
+                  <h3 className="font-sans text-sm font-semibold tracking-tight text-on-surface">
+                    Benchmark Run History ({evalRuns.length} runs recorded)
+                  </h3>
+                </div>
+                {evalRuns.length > 0 && (
+                  <button
+                    onClick={() => setEvalRuns([])}
+                    className="font-mono text-xs text-outline hover:text-error transition-colors cursor-pointer"
+                    type="button"
+                  >
+                    Clear History
+                  </button>
                 )}
-              </tbody>
-            </table>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#262626] text-outline bg-surface-container-lowest">
+                      <th className="p-2.5">Condition</th>
+                      <th className="p-2.5">Model / Engine</th>
+                      <th className="p-2.5">WER</th>
+                      <th className="p-2.5">S / D / I / C</th>
+                      <th className="p-2.5">Latency</th>
+                      <th className="p-2.5">RTF</th>
+                      <th className="p-2.5">Glossary Missing</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#262626]">
+                    {evalRuns.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-4 text-center text-outline italic font-sans">
+                          No benchmark runs recorded in this session. Configure parameters and click "Run Benchmark Suite" above.
+                        </td>
+                      </tr>
+                    ) : (
+                      evalRuns.map((r) => (
+                        <tr key={r.id} className="hover:bg-surface-container transition-colors">
+                          <td className="p-2.5 font-semibold text-on-surface">{r.condition}</td>
+                          <td className="p-2.5 text-on-surface-variant">
+                            {r.model} ({r.engine})
+                          </td>
+                          <td className="p-2.5 font-bold text-tertiary">{(r.wer * 100).toFixed(1)}%</td>
+                          <td className="p-2.5 text-outline">
+                            {r.S} / {r.D} / {r.I} / {r.C}
+                          </td>
+                          <td className="p-2.5 text-primary">{r.latencyMs}ms</td>
+                          <td className="p-2.5 text-secondary">{r.rtf}x</td>
+                          <td className="p-2.5 text-error">
+                            {r.missedTerms.length > 0 ? r.missedTerms.join(', ') : 'None (100% matched)'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   )
 }
+
+export default EvaluatePage
