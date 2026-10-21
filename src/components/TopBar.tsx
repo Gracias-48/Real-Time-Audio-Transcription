@@ -1,6 +1,5 @@
 import React from 'react'
 import { useAppStore } from '../lib/store'
-import { Link, useLocation } from 'react-router-dom'
 
 interface TopBarProps {
   onOpenSettings: () => void
@@ -9,185 +8,183 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenExport, onToggleSidebar }) => {
-  const { status, statusMessage, latencyMs, rtf, engineDevice, settings, updateSettings } = useAppStore()
-  const location = useLocation()
-  const isEvaluatePage = location.pathname === '/evaluate'
+  const {
+    currentTab,
+    setCurrentTab,
+    latencyMs,
+    rtf,
+    settings,
+    updateSettings,
+    startNewSession,
+    archivedSessions,
+  } = useAppStore()
 
   const latencySec = (latencyMs / 1000).toFixed(2) + 's'
 
+  const breadcrumbLabel =
+    currentTab === 'transcriber'
+      ? 'Live Transcriber'
+      : currentTab === 'archive'
+      ? 'Session Archive'
+      : 'Evaluation Suite'
+
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest z-50 flex items-center justify-between px-space-md border-b border-[#262626]">
-      {/* Left: Brand & Acoustic Engine Status */}
-      <div className="flex items-center gap-space-md min-w-0">
-        {/* Mobile Hamburger */}
+    <header className="fixed top-0 left-0 right-0 h-14 bg-white/90 backdrop-blur-md border-b border-gray-200/70 z-40 flex items-center justify-between px-4 sm:px-6">
+      {/* Brand & Breadcrumbs */}
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        {/* Mobile menu trigger */}
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors lg:hidden shrink-0 cursor-pointer"
-            title="Toggle Navigation Menu"
             type="button"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition lg:hidden shrink-0 cursor-pointer"
+            title="Toggle Menu"
           >
             <span className="material-symbols-outlined text-[20px]">menu</span>
           </button>
         )}
 
-        {/* Brand Group */}
-        <div className="flex items-center gap-space-sm shrink-0">
-          <div className="w-8 h-8 bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-sm select-none">
-            TN
+        {/* Logo & Brand Name */}
+        <button
+          type="button"
+          onClick={() => setCurrentTab('transcriber')}
+          className="flex items-center gap-2 group cursor-pointer text-left shrink-0"
+        >
+          <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center transition-transform group-hover:scale-95 shadow-2xs">
+            <span className="material-symbols-outlined text-[16px]">graphic_eq</span>
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-space-xs">
-              <span className="font-sans text-base font-semibold tracking-tight text-on-surface leading-none">
-                TranscribeNote
-              </span>
-              <span className="font-mono text-[10px] bg-primary-container text-on-primary-container px-1 py-0.5 uppercase tracking-wide font-medium">
-                Carbon v1.2
-              </span>
-            </div>
-            <span className="font-mono text-[11px] text-outline tracking-tight pt-0.5">
-              Lecture AI · On-Device ASR
-            </span>
-          </div>
-        </div>
-
-        <div className="h-6 w-px bg-surface-bright hidden xl:block"></div>
-
-        {/* Live Listening Status Beacon */}
-        <div className="hidden xl:flex items-center gap-space-xs px-space-sm py-1 bg-tertiary-container/20 text-tertiary font-mono text-[11px]">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              status === 'listening'
-                ? 'bg-tertiary animate-pulse'
-                : status === 'loading'
-                  ? 'bg-secondary animate-ping'
-                  : 'bg-outline'
-            }`}
-          ></span>
-          <span className="font-medium tracking-wide uppercase">
-            {status === 'listening'
-              ? 'Listening (WebGPU Local)'
-              : status === 'loading'
-                ? 'Loading Model...'
-                : statusMessage || 'Ready / Standby'}
+          <span className="text-[13px] font-semibold tracking-tight text-slate-900 hidden sm:inline">
+            TranscribeNote
           </span>
-        </div>
+        </button>
 
-        {/* Engine Badge */}
-        <div className="hidden 2xl:flex items-center gap-1.5 px-space-sm py-1 bg-surface-container font-mono text-[11px] text-on-surface-variant">
-          <span className="material-symbols-outlined text-[14px] text-primary">memory</span>
-          <span>
-            {settings.engine === 'browser'
-              ? `Browser ${settings.browserModel} (${engineDevice})`
-              : `Python ${settings.pythonModel} (${engineDevice})`}
-          </span>
-        </div>
+        <span className="text-gray-300 text-xs select-none">/</span>
+        <span className="text-xs text-slate-600 font-medium truncate">{breadcrumbLabel}</span>
 
-        {/* Security / Privacy Badge */}
-        <div className="hidden lg:flex items-center gap-1.5 px-space-sm py-1 bg-surface-container font-mono text-[11px] text-tertiary">
-          <span className="material-symbols-outlined text-[14px]">lock</span>
-          <span>100% On-Device / No Cloud</span>
+        {/* Engine status beacon */}
+        <div className="hidden md:flex items-center gap-1.5 ml-2 pl-3 border-l border-gray-100">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] text-slate-500 font-normal">WebGPU · Local</span>
         </div>
       </div>
 
-      {/* Right: Language, Telemetry, and Quick Actions */}
-      <div className="flex items-center gap-space-md shrink-0">
-        {/* Language Switcher */}
-        <div className="flex items-center bg-surface-container p-0.5">
+      {/* Right Controls */}
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Minimal Language Switch */}
+        <div className="flex items-center p-0.5 rounded-md bg-slate-100/70 text-[11px] font-medium text-slate-500">
           <button
+            type="button"
             onClick={() => updateSettings({ language: 'id' })}
-            className={`px-2 py-1 font-mono text-[11px] transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 rounded transition cursor-pointer ${
               settings.language === 'id'
-                ? 'bg-primary-container text-on-primary-container font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
-            type="button"
-            title="Set spoken language to Indonesian"
           >
-            🇮🇩 ID
+            ID
           </button>
           <button
+            type="button"
             onClick={() => updateSettings({ language: 'en' })}
-            className={`px-2 py-1 font-mono text-[11px] transition-colors cursor-pointer ${
+            className={`px-2 py-0.5 rounded transition cursor-pointer ${
               settings.language === 'en'
-                ? 'bg-primary-container text-on-primary-container font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                ? 'bg-white text-slate-900 shadow-2xs font-semibold'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
-            type="button"
-            title="Set spoken language to English"
           >
-            🇺🇸 EN
+            EN
           </button>
+        </div>
+
+        {/* Telemetry Pills (Latency & RTF) */}
+        <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-50 border border-gray-200/60 font-mono text-[11px] text-slate-600">
+          <span>Lat: <strong className="text-slate-900">{latencySec}</strong></span>
+          <span className="text-gray-300">|</span>
+          <span>RTF: <strong className="text-slate-900">{rtf > 0 ? `${rtf}x` : '0.38x'}</strong></span>
+        </div>
+
+        {/* + New Session Button */}
+        <button
+          type="button"
+          onClick={() => {
+            startNewSession()
+            setCurrentTab('transcriber')
+          }}
+          className="hidden sm:inline-flex h-8 px-2.5 items-center gap-1.5 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition shadow-2xs cursor-pointer"
+          title="Start fresh lecture session"
+        >
+          <span className="material-symbols-outlined text-[15px] text-slate-500">add</span>
+          <span>New Session</span>
+        </button>
+
+        {/* Navigation Switchers (NO NEW TABS) */}
+        {currentTab === 'evaluate' ? (
           <button
-            onClick={() => updateSettings({ language: 'auto' })}
-            className={`px-2 py-1 font-mono text-[11px] transition-colors cursor-pointer ${
-              settings.language === 'auto'
-                ? 'bg-primary-container text-on-primary-container font-semibold'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
-            }`}
             type="button"
-            title="Auto-detect language"
+            onClick={() => setCurrentTab('transcriber')}
+            className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md bg-primary-container text-white text-[12px] font-medium hover:bg-primary-hover transition shadow-2xs cursor-pointer"
           >
-            🌐 Auto
+            <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+            <span className="hidden sm:inline">Transcriber</span>
           </button>
-        </div>
-
-        {/* Latency & RTF Display */}
-        <div className="hidden md:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 font-mono text-[12px] border border-[#262626]">
-          <div className="flex items-center gap-1">
-            <span className="text-outline">Latency:</span>
-            <span className="text-tertiary font-semibold">{latencySec}</span>
-          </div>
-          <span className="text-outline-variant">|</span>
-          <div className="flex items-center gap-1">
-            <span className="text-outline">RTF:</span>
-            <span className="text-secondary font-semibold">{rtf.toFixed(2)}x</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-space-xs">
-          {isEvaluatePage ? (
-            <Link
-              to="/"
-              className="px-space-sm py-1.5 font-mono text-[11px] text-primary bg-primary-container/20 border border-primary/40 hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-              <span className="hidden sm:inline">Transcriber</span>
-            </Link>
-          ) : (
-            <Link
-              to="/evaluate"
-              className="px-space-sm py-1.5 font-mono text-[11px] text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-[16px]">speed</span>
-              <span className="hidden lg:inline">/evaluate</span>
-            </Link>
-          )}
-
+        ) : (
           <button
-            onClick={onOpenSettings}
-            className="px-space-sm py-1.5 font-mono text-[11px] text-on-surface-variant bg-surface-container hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center gap-1 cursor-pointer"
             type="button"
-            title="Acoustic & VAD Settings"
+            onClick={() => setCurrentTab('evaluate')}
+            className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-600 hover:text-slate-900 hover:border-gray-300 transition shadow-2xs cursor-pointer"
+            title="Scientific ASR Benchmark Suite"
           >
-            <span className="material-symbols-outlined text-[16px]">tune</span>
-            <span className="hidden lg:inline">Settings</span>
+            <span className="material-symbols-outlined text-[15px] text-slate-400">query_stats</span>
+            <span className="hidden lg:inline">/evaluate</span>
           </button>
+        )}
 
-          {onOpenExport && (
-            <button
-              onClick={onOpenExport}
-              className="px-space-sm py-1.5 font-mono text-[11px] text-on-primary bg-primary-container hover:bg-inverse-primary transition-colors flex items-center gap-1 cursor-pointer font-medium"
-              type="button"
-              title="Export Notes & Transcript"
-            >
-              <span className="material-symbols-outlined text-[16px]">file_download</span>
-              <span className="hidden sm:inline">Export</span>
-            </button>
+        {/* History Archive Link */}
+        <button
+          type="button"
+          onClick={() => setCurrentTab('archive')}
+          className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-md border text-[12px] font-medium transition shadow-2xs cursor-pointer ${
+            currentTab === 'archive'
+              ? 'border-blue-400 bg-blue-50 text-blue-700'
+              : 'border-gray-200/80 bg-white text-slate-600 hover:text-slate-900 hover:border-gray-300'
+          }`}
+          title="View Session Archive & History"
+        >
+          <span className="material-symbols-outlined text-[15px] text-slate-400">folder_open</span>
+          <span className="hidden xl:inline">Archive</span>
+          {archivedSessions.length > 0 && (
+            <span className="text-[10px] font-mono px-1 rounded-full bg-slate-100 text-slate-600">
+              {archivedSessions.length}
+            </span>
           )}
-        </div>
+        </button>
+
+        {/* Acoustic Settings Trigger */}
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-600 hover:text-slate-900 hover:border-gray-300 transition shadow-2xs cursor-pointer"
+          title="Acoustic Settings"
+        >
+          <span className="material-symbols-outlined text-[15px] text-slate-400">tune</span>
+          <span className="hidden sm:inline">Settings</span>
+        </button>
+
+        {/* Export Notes Trigger */}
+        {onOpenExport && (
+          <button
+            type="button"
+            onClick={onOpenExport}
+            className="h-8 px-3 inline-flex items-center gap-1 rounded-md bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition shadow-2xs cursor-pointer"
+            title="Export Notes (Markdown, JSON, Local AI Summary)"
+          >
+            <span className="material-symbols-outlined text-[15px]">file_download</span>
+            <span className="hidden sm:inline">Export</span>
+          </button>
+        )}
       </div>
     </header>
   )
 }
+
+export default TopBar

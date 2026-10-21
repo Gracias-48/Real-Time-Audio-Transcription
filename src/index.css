@@ -1,68 +1,65 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface: #131313;
-  --color-surface-dim: #131313;
-  --color-surface-bright: #393939;
-  --color-surface-container-lowest: #0e0e0e;
-  --color-surface-container-low: #1c1b1b;
-  --color-surface-container: #201f1f;
-  --color-surface-container-high: #2a2a2a;
-  --color-surface-container-highest: #353534;
-  --color-on-surface: #e5e2e1;
-  --color-on-surface-variant: #c3c6d8;
-  --color-inverse-surface: #e5e2e1;
-  --color-inverse-on-surface: #313030;
-  --color-outline: #8c90a2;
-  --color-outline-variant: #424656;
-  --color-surface-tint: #b4c5ff;
+  --color-canvas: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-dim: #f1f5f9;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f8fafc;
+  --color-surface-container: #f1f5f9;
+  --color-surface-container-high: #e2e8f0;
+  --color-surface-container-highest: #cbd5e1;
 
-  --color-primary: #b4c5ff;
-  --color-on-primary: #002979;
-  --color-primary-container: #0f62fe;
-  --color-on-primary-container: #f3f3ff;
-  --color-inverse-primary: #0052dd;
-  --color-primary-fixed: #dbe1ff;
-  --color-primary-fixed-dim: #b4c5ff;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-outline: #94a3b8;
+  --color-outline-variant: #e2e8f0;
 
-  --color-secondary: #ffd247;
-  --color-on-secondary: #3d2f00;
-  --color-secondary-container: #e4b601;
-  --color-on-secondary-container: #5d4900;
-  --color-secondary-fixed: #ffe08b;
-  --color-secondary-fixed-dim: #f0c119;
+  --color-primary: #2563eb;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2563eb;
+  --color-on-primary-container: #eff6ff;
+  --color-primary-hover: #1d4ed8;
 
-  --color-tertiary: #7bdb87;
-  --color-on-tertiary: #003913;
-  --color-tertiary-container: #198038;
-  --color-on-tertiary-container: #d4ffd2;
-  --color-tertiary-fixed: #96f8a1;
-  --color-tertiary-fixed-dim: #7bdb87;
+  --color-secondary: #475569;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #f1f5f9;
+  --color-on-secondary-container: #1e293b;
 
-  --color-error: #ffb4ab;
-  --color-on-error: #690005;
-  --color-error-container: #93000a;
-  --color-on-error-container: #ffdad6;
+  --color-tertiary: #16a34a;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #ecfdf5;
+  --color-on-tertiary-container: #065f46;
 
-  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-warning: #d97706;
+  --color-warning-container: #fffbeb;
+  --color-on-warning-container: #92400e;
+
+  --color-error: #e11d48;
+  --color-on-error: #ffffff;
+  --color-error-container: #fff1f2;
+  --color-on-error-container: #9f1239;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-code: 'JetBrains Mono', monospace;
 
   --spacing-space-xs: 0.25rem;
   --spacing-space-sm: 0.5rem;
   --spacing-space-md: 1rem;
   --spacing-space-lg: 1.5rem;
-  --spacing-space-xl: 2.5rem;
+  --spacing-space-xl: 2rem;
 }
 
 @layer base {
   html, body {
     margin: 0;
     padding: 0;
-    background-color: var(--color-surface);
-    color: var(--color-on-surface);
-    font-family: var(--font-body);
+    background-color: #fafafa;
+    color: #0f172a;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
@@ -70,6 +67,7 @@
 
   body {
     overscroll-behavior: none;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   #root {
@@ -96,17 +94,21 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Carbon industrial scrollbars */
+/* Minimal subtle scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #1c1b1b;
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #353534;
+  background: #e2e8f0;
+  border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #424656;
+  background: #cbd5e1;
 }

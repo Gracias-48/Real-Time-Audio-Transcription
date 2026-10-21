@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../lib/store'
-import type { BrowserModel, DevicePref, PythonModel } from '../lib/types'
+import type { BrowserModel, DevicePref } from '../lib/types'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -8,7 +8,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { settings, updateSettings, resetSession, loadMockData } = useAppStore()
+  const { settings, updateSettings, startNewSession } = useAppStore()
   const [serverHealth, setServerHealth] = useState<string | null>(null)
   const [isCheckingHealth, setIsCheckingHealth] = useState(false)
 
@@ -22,31 +22,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       const res = await fetch(`${httpUrl}/health`, { signal: AbortSignal.timeout(3000) })
       if (res.ok) {
         const data = await res.json()
-        setServerHealth(`✓ Connected: Python Server Online. Loaded: ${Object.keys(data.loaded || {}).join(', ') || 'None (warm-up ready)'}`)
+        setServerHealth(`✓ Connected: Python Server Online. Loaded: ${Object.keys(data.loaded || {}).join(', ') || 'None (ready)'}`)
       } else {
         setServerHealth(`✗ Server responded with status ${res.status}`)
       }
     } catch {
-      setServerHealth(`✗ Connection failed: Is 'uvicorn app:app --port 8765' running?`)
+      setServerHealth(`✗ Connection failed: Is 'uvicorn app:app --port 8765' running on localhost?`)
     } finally {
       setIsCheckingHealth(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-container-lowest/80 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-xl bg-surface-container-low border border-[#353534] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-xl bg-white rounded-xl border border-gray-200/80 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#262626] bg-surface-container">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px] text-primary">tune</span>
-            <h3 className="text-base font-semibold text-on-surface font-sans">
-              Acoustic &amp; VAD Configuration
-            </h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[18px]">tune</span>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight text-slate-900">
+                Acoustic &amp; ASR Engine Configuration
+              </h3>
+              <p className="text-xs text-slate-400">
+                Adjust on-device speech model and voice activity detection thresholds
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-bright transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
             type="button"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -54,241 +61,183 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </div>
 
         {/* Settings Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm text-on-surface-variant">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-sm text-slate-700">
           {/* Engine Choice */}
-          <div className="space-y-3">
-            <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-outline">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
               ASR Inference Engine
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => updateSettings({ engine: 'browser' })}
-                className={`p-3 border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                   settings.engine === 'browser'
-                    ? 'bg-primary-container/20 border-primary-container text-on-surface'
-                    : 'bg-surface-container border-[#2e2e2e] hover:border-[#424656] text-on-surface-variant'
+                    ? 'bg-blue-50/60 border-blue-500 text-slate-900'
+                    : 'bg-white border-gray-200 hover:border-gray-300 text-slate-600'
                 }`}
               >
-                <div className="font-semibold text-sm mb-1 text-on-surface flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-primary">memory</span>
+                <div className="font-semibold text-xs mb-1 text-slate-900 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-blue-600">memory</span>
                   <span>In-Browser Whisper</span>
                 </div>
-                <div className="text-[11px] text-outline leading-snug">
-                  WebGPU / WASM. Zero backend needed. Runs directly on laptop.
+                <div className="text-[11px] text-slate-400 leading-snug">
+                  100% Client-side WebGPU / WASM. Zero backend server required.
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => updateSettings({ engine: 'python' })}
-                className={`p-3 border text-left transition-all cursor-pointer ${
+                className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                   settings.engine === 'python'
-                    ? 'bg-primary-container/20 border-primary-container text-on-surface'
-                    : 'bg-surface-container border-[#2e2e2e] hover:border-[#424656] text-on-surface-variant'
+                    ? 'bg-blue-50/60 border-blue-500 text-slate-900'
+                    : 'bg-white border-gray-200 hover:border-gray-300 text-slate-600'
                 }`}
               >
-                <div className="font-semibold text-sm mb-1 text-on-surface flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px] text-secondary">terminal</span>
+                <div className="font-semibold text-xs mb-1 text-slate-900 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-slate-700">terminal</span>
                   <span>Local Python Server</span>
                 </div>
-                <div className="text-[11px] text-outline leading-snug">
-                  Faster-Whisper CUDA / CPU backend on localhost:8765.
+                <div className="text-[11px] text-slate-400 leading-snug">
+                  faster-whisper CUDA / CTranslate2 on localhost:8765.
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Spoken Language Choice */}
-          <div className="space-y-2">
-            <label className="block text-xs font-mono font-semibold uppercase tracking-wider text-outline">
-              Spoken Language Specification
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => updateSettings({ language: 'id' })}
-                className={`py-2 px-3 border text-xs font-mono font-semibold transition-all cursor-pointer ${
-                  settings.language === 'id'
-                    ? 'bg-primary-container text-on-primary-container border-primary-container'
-                    : 'bg-surface-container border-[#2e2e2e] text-on-surface-variant hover:border-[#424656]'
-                }`}
-              >
-                🇮🇩 Indonesian (id)
-              </button>
-              <button
-                type="button"
-                onClick={() => updateSettings({ language: 'en' })}
-                className={`py-2 px-3 border text-xs font-mono font-semibold transition-all cursor-pointer ${
-                  settings.language === 'en'
-                    ? 'bg-primary-container text-on-primary-container border-primary-container'
-                    : 'bg-surface-container border-[#2e2e2e] text-on-surface-variant hover:border-[#424656]'
-                }`}
-              >
-                🇺🇸 English (en)
-              </button>
-              <button
-                type="button"
-                onClick={() => updateSettings({ language: 'auto' })}
-                className={`py-2 px-3 border text-xs font-mono font-semibold transition-all cursor-pointer ${
-                  settings.language === 'auto'
-                    ? 'bg-primary-container text-on-primary-container border-primary-container'
-                    : 'bg-surface-container border-[#2e2e2e] text-on-surface-variant hover:border-[#424656]'
-                }`}
-              >
-                🌐 Auto-Detect
-              </button>
-            </div>
-          </div>
-
-          {/* Browser engine options */}
+          {/* Browser Whisper Model */}
           {settings.engine === 'browser' && (
-            <div className="p-4 bg-surface-container border border-[#2e2e2e] space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <label className="text-xs font-medium text-on-surface">Whisper ONNX Model</label>
-                <select
-                  value={settings.browserModel}
-                  onChange={(e) => updateSettings({ browserModel: e.target.value as BrowserModel })}
-                  className="bg-surface-container-high border border-[#424656] px-3 py-1.5 text-xs text-on-surface font-mono focus:outline-none"
-                >
-                  <option value="tiny">whisper-tiny (Multilingual: ID, EN)</option>
-                  <option value="base">whisper-base (Multilingual: Higher Accuracy)</option>
-                  <option value="tiny.en">whisper-tiny.en (English-only)</option>
-                  <option value="base.en">whisper-base.en (English-only)</option>
-                </select>
-              </div>
+            <div className="space-y-3 p-4 bg-slate-50/80 rounded-lg border border-gray-200/60">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Browser Whisper Model
+                  </label>
+                  <select
+                    value={settings.browserModel}
+                    onChange={(e) => updateSettings({ browserModel: e.target.value as BrowserModel })}
+                    className="w-full bg-white border border-gray-200 rounded-md p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="tiny">whisper-tiny (Multilingual - 39M)</option>
+                    <option value="base">whisper-base (Multilingual - 74M)</option>
+                  </select>
+                </div>
 
-              <div className="flex items-center justify-between gap-4">
-                <label className="text-xs font-medium text-on-surface">Acceleration Backend</label>
-                <select
-                  value={settings.device}
-                  onChange={(e) => updateSettings({ device: e.target.value as DevicePref })}
-                  className="bg-surface-container-high border border-[#424656] px-3 py-1.5 text-xs text-on-surface font-mono focus:outline-none"
-                >
-                  <option value="auto">Auto (WebGPU with WASM fallback)</option>
-                  <option value="webgpu">WebGPU (Hardware GPU Shader)</option>
-                  <option value="wasm">WebAssembly (CPU Quantized q8)</option>
-                </select>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Computation Device
+                  </label>
+                  <select
+                    value={settings.device}
+                    onChange={(e) => updateSettings({ device: e.target.value as DevicePref })}
+                    className="w-full bg-white border border-gray-200 rounded-md p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="auto">Auto (WebGPU with WASM fallback)</option>
+                    <option value="webgpu">WebGPU (Hardware Shaders)</option>
+                    <option value="wasm">WASM CPU (Threaded SIMD)</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Python engine options */}
+          {/* Python Server Config */}
           {settings.engine === 'python' && (
-            <div className="p-4 bg-surface-container border border-[#2e2e2e] space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <label className="text-xs font-medium text-on-surface">Python Model</label>
-                <select
-                  value={settings.pythonModel}
-                  onChange={(e) => updateSettings({ pythonModel: e.target.value as PythonModel })}
-                  className="bg-surface-container-high border border-[#424656] px-3 py-1.5 text-xs text-on-surface font-mono focus:outline-none"
-                >
-                  <option value="tiny">tiny (Multilingual: ID, EN)</option>
-                  <option value="base">base (Multilingual: Balanced)</option>
-                  <option value="small">small (Multilingual: High accuracy)</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <label className="text-xs font-medium text-on-surface">WebSocket Server URL</label>
+            <div className="space-y-3 p-4 bg-slate-50/80 rounded-lg border border-gray-200/60">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  WebSocket Server Endpoint
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={settings.serverUrl}
+                    onChange={(e) => updateSettings({ serverUrl: e.target.value })}
+                    className="flex-1 bg-white border border-gray-200 rounded-md p-2 text-xs font-mono text-slate-900 focus:outline-none"
+                    placeholder="ws://127.0.0.1:8765"
+                  />
                   <button
                     type="button"
                     onClick={checkPythonServer}
                     disabled={isCheckingHealth}
-                    className="text-[11px] text-primary hover:underline cursor-pointer font-mono"
+                    className="px-3 py-1 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
                   >
-                    {isCheckingHealth ? 'Testing...' : 'Test Connection'}
+                    {isCheckingHealth ? 'Testing...' : 'Test'}
                   </button>
                 </div>
-                <input
-                  type="text"
-                  value={settings.serverUrl}
-                  onChange={(e) => updateSettings({ serverUrl: e.target.value })}
-                  placeholder="ws://127.0.0.1:8765"
-                  className="w-full bg-surface-container-high border border-[#424656] px-3 py-1.5 text-xs text-on-surface font-mono focus:outline-none"
-                />
                 {serverHealth && (
-                  <p className={`text-xs font-mono ${serverHealth.startsWith('✓') ? 'text-tertiary' : 'text-secondary'}`}>
-                    {serverHealth}
-                  </p>
+                  <div className="mt-2 text-xs font-mono text-slate-600">{serverHealth}</div>
                 )}
               </div>
             </div>
           )}
 
-          {/* VAD Settings */}
-          <div className="space-y-4 pt-2 border-t border-[#262626]">
-            <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-outline">
-              Silero Voice Activity Detection (VAD)
-            </h4>
+          {/* Language Selection */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                ASR Primary Language
+              </label>
+              <select
+                value={settings.language}
+                onChange={(e) => updateSettings({ language: e.target.value as 'id' | 'en' })}
+                className="w-full bg-white border border-gray-200 rounded-md p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+              >
+                <option value="id">Bahasa Indonesia (id)</option>
+                <option value="en">English (en)</option>
+              </select>
+            </div>
 
-            {/* Threshold slider */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-on-surface">Speech Probability Threshold</span>
-                <span className="font-mono text-primary font-semibold">{settings.vadThreshold.toFixed(2)}</span>
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                VAD Silence Threshold ({settings.vadThreshold})
+              </label>
               <input
                 type="range"
-                min="0.2"
-                max="0.85"
+                min="0.1"
+                max="0.9"
                 step="0.05"
                 value={settings.vadThreshold}
                 onChange={(e) => updateSettings({ vadThreshold: parseFloat(e.target.value) })}
-                className="w-full accent-primary-container cursor-pointer"
+                className="w-full accent-blue-600 mt-2 cursor-pointer"
               />
-              <span className="text-[11px] text-outline">Higher values prevent triggering on breathing or fan noise.</span>
-            </div>
-
-            {/* Redemption ms */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-on-surface">Silence Redemption Time</span>
-                <span className="font-mono text-primary font-semibold">{settings.redemptionMs} ms</span>
-              </div>
-              <input
-                type="range"
-                min="300"
-                max="1400"
-                step="50"
-                value={settings.redemptionMs}
-                onChange={(e) => updateSettings({ redemptionMs: parseInt(e.target.value, 10) })}
-                className="w-full accent-primary-container cursor-pointer"
-              />
-              <span className="text-[11px] text-outline">Duration of silence that triggers sentence completion and commit.</span>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="pt-4 border-t border-[#262626] flex items-center justify-between">
-            <button
-              type="button"
-              onClick={loadMockData}
-              className="text-xs font-mono text-primary hover:underline cursor-pointer"
-            >
-              Restore Mock Demo Data
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Clear entire transcript and start fresh session?')) {
-                  resetSession()
-                  onClose()
-                }
-              }}
-              className="text-xs font-mono text-error hover:underline cursor-pointer"
-            >
-              Clear Session
-            </button>
+          {/* Academic Technical Terms Prompt */}
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">
+              Lecture Domain Glossary Prompt (Bias Hint)
+            </label>
+            <textarea
+              value={settings.glossaryPrompt}
+              onChange={(e) => updateSettings({ glossaryPrompt: e.target.value })}
+              rows={3}
+              className="w-full bg-white border border-gray-200 rounded-md p-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-blue-500"
+              placeholder="Comma-separated technical terms..."
+            />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end px-6 py-4 border-t border-[#262626] bg-surface-container">
+        <div className="px-6 py-4 bg-slate-50/70 border-t border-gray-100 flex items-center justify-between">
+          <button
+            onClick={() => {
+              if (window.confirm('Archive current session and clear transcript?')) {
+                startNewSession()
+                onClose()
+              }
+            }}
+            type="button"
+            className="text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
+          >
+            Start New Session
+          </button>
           <button
             onClick={onClose}
-            className="px-6 py-2 text-xs font-mono font-semibold text-on-primary bg-primary-container hover:bg-inverse-primary transition-all cursor-pointer"
+            type="button"
+            className="h-8 px-4 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition cursor-pointer"
           >
             Done
           </button>
@@ -297,3 +246,5 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     </div>
   )
 }
+
+export default SettingsModal

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Evaluation &amp; Benchmarks — TranscribeNote</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            canvas: '#fbfbfb',
+            surface: '#ffffff',
+            border: '#f0f0f2',
+            'border-subtle': '#f3f4f6',
+            'text-primary': '#111827',
+            'text-secondary': '#6b7280',
+            'text-muted': '#9ca3af',
+            accent: '#3b82f6',
+            'accent-soft': '#eff6ff',
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e5e7eb;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-[#fafafa] text-[#1e293b] antialiased min-h-screen selection:bg-slate-900 selection:text-white">
+<!-- Header -->
+<header class="fixed top-0 left-0 right-0 h-14 bg-white/90 backdrop-blur-md border-b border-gray-200/70 z-40 flex items-center justify-between px-6">
+<div class="flex items-center gap-5">
+<a class="flex items-center gap-2.5 group" href="#">
+<div class="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center transition-transform group-hover:scale-95">
+<span class="material-symbols-outlined text-[16px]">graphic_eq</span>
+</div>
+<span class="text-[13px] font-medium tracking-tight text-slate-900">TranscribeNote</span>
+</a>
+<span class="text-gray-300 text-xs">/</span>
+<span class="text-xs text-slate-500 font-normal">Evaluation Suite</span>
+<div class="hidden md:flex items-center gap-1.5 ml-3 pl-3 border-l border-gray-100">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+<span class="text-[11px] text-slate-500 font-normal">WebGPU · Local</span>
+</div>
+</div>
+<!-- Header Right Controls -->
+<div class="flex items-center gap-2.5">
+<!-- Minimal Language Switch -->
+<div class="hidden sm:flex items-center p-0.5 rounded-md bg-slate-100/70 text-[11px] font-medium text-slate-500">
+<button class="px-2 py-0.5 rounded text-slate-400 hover:text-slate-700 transition">ID</button>
+<button class="px-2 py-0.5 rounded bg-white text-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">EN</button>
+</div>
+<a class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-600 hover:text-slate-900 hover:border-gray-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-[15px] text-slate-400">tune</span>
+<span>Settings</span>
+</a>
+<button class="h-8 w-8 rounded-full bg-slate-100 text-slate-600 text-xs font-medium flex items-center justify-center hover:bg-slate-200 transition" type="button">
+        AL
+      </button>
+</div>
+</header>
+<!-- Sidebar -->
+<aside class="fixed left-0 top-0 h-full w-56 bg-white border-r border-gray-200/70 z-30 flex flex-col pt-16">
+<nav class="flex-1 px-3 py-4 space-y-0.5">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-md transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-[17px] text-slate-400">record_voice_over</span>
+<span>Live Transcriber</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-md transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-[17px] text-slate-400">star</span>
+<span>Starred Highlights</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-md transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-[17px] text-slate-400">folder_open</span>
+<span>Session Archive</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs bg-slate-100/80 text-slate-900 rounded-md transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-[17px] text-slate-900">query_stats</span>
+<span>Evaluation Suite</span>
+</a>
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-md transition-colors font-medium" href="#">
+<span class="material-symbols-outlined text-[17px] text-slate-400">tune</span>
+<span>Acoustic Settings</span>
+</a>
+</nav>
+<div class="p-4 border-t border-gray-100 text-[11px] text-slate-400 space-y-1.5">
+<div class="flex justify-between items-center text-slate-500">
+<span>Local Buffer</span>
+<span class="font-mono text-[10px]">18.4 MB</span>
+</div>
+<div class="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+<div class="bg-slate-400 h-full rounded-full" style="width: 18%"></div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="pl-56">
+<main class="max-w-5xl mx-auto pt-24 pb-28 px-8 space-y-10">
+<!-- 1. Hero / Header Section -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-gray-100">
+<div>
+<h1 class="text-xl font-semibold tracking-tight text-slate-900">
+            Evaluation &amp; Benchmarks
+          </h1>
+<p class="text-[13px] text-slate-500 mt-1 font-normal">
+            Evaluate on-device transcription accuracy, inference latency, and acoustic robustness.
+          </p>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-8 px-3 rounded-md border border-gray-200 bg-white hover:bg-slate-50 text-[12px] font-medium text-slate-700 transition flex items-center gap-1.5 shadow-sm" id="btn-export-csv">
+<span class="material-symbols-outlined text-[15px] text-slate-400">file_download</span>
+<span>Export</span>
+</button>
+<button class="h-8 px-3.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium transition flex items-center gap-1.5 shadow-sm" id="btn-run-benchmark">
+<span class="material-symbols-outlined text-[15px]">play_arrow</span>
+<span>Run Benchmark</span>
+</button>
+</div>
+</div>
+<!-- 2. Simplified Configuration Bar (Clean minimal segmented controls) -->
+<div class="bg-white rounded-lg border border-gray-200/70 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-wrap items-center justify-between gap-4">
+<div class="flex flex-wrap items-center gap-3 text-xs">
+<!-- Dataset Pill -->
+<div class="flex items-center gap-2">
+<span class="text-slate-400">Corpus:</span>
+<div class="inline-flex rounded-md bg-slate-50 p-0.5 border border-gray-200/60" role="tablist">
+<button class="corpus-tab active px-2.5 py-1 rounded text-slate-900 bg-white font-medium shadow-[0_1px_1px_rgba(0,0,0,0.04)]" data-corpus="cv-id">Common Voice (ID)</button>
+<button class="corpus-tab px-2.5 py-1 rounded text-slate-500 hover:text-slate-800" data-corpus="cs50">CS50 Lecture</button>
+<button class="corpus-tab px-2.5 py-1 rounded text-slate-500 hover:text-slate-800" data-corpus="custom">Custom Audio</button>
+</div>
+</div>
+<div class="h-3.5 w-px bg-gray-200"></div>
+<!-- Model Target -->
+<div class="flex items-center gap-2">
+<span class="text-slate-400">Model:</span>
+<div class="inline-flex rounded-md bg-slate-50 p-0.5 border border-gray-200/60">
+<button class="px-2.5 py-1 rounded text-slate-900 bg-white font-medium shadow-[0_1px_1px_rgba(0,0,0,0.04)]">Whisper-Tiny (WebGPU)</button>
+<button class="px-2.5 py-1 rounded text-slate-500 hover:text-slate-800">faster-whisper (Base)</button>
+</div>
+</div>
+<div class="h-3.5 w-px bg-gray-200"></div>
+<!-- Acoustic Condition -->
+<div class="flex items-center gap-2">
+<span class="text-slate-400">Noise:</span>
+<div class="inline-flex rounded-md bg-slate-50 p-0.5 border border-gray-200/60">
+<button class="condition-chip active px-2.5 py-1 rounded text-slate-900 bg-white font-medium shadow-[0_1px_1px_rgba(0,0,0,0.04)]">Clean</button>
+<button class="condition-chip px-2.5 py-1 rounded text-slate-500 hover:text-slate-800">Reverb (RT60)</button>
+<button class="condition-chip px-2.5 py-1 rounded text-slate-500 hover:text-slate-800">Fast Speech</button>
+</div>
+</div>
+</div>
+<span class="text-[11px] font-mono text-slate-400 hidden xl:inline">Apple M-Series WGSL</span>
+</div>
+<!-- 3. Key Metrics (Minimalist, Calm Cards with Generous Spacing) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- WER -->
+<div class="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+<div class="flex items-center justify-between">
+<span class="text-xs text-slate-500 font-normal">Word Error Rate</span>
+<span class="text-[11px] font-medium text-emerald-600 bg-emerald-50/80 px-1.5 py-0.5 rounded">-1.4%</span>
+</div>
+<div class="my-auto">
+<div class="text-2xl font-semibold tracking-tight text-slate-900">8.4<span class="text-base font-normal text-slate-400">%</span></div>
+</div>
+<div class="text-[11px] text-slate-400">Target &lt; 10.0% benchmark</div>
+</div>
+<!-- CER -->
+<div class="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+<div class="flex items-center justify-between">
+<span class="text-xs text-slate-500 font-normal">Char Error Rate</span>
+<span class="text-[11px] font-mono text-slate-400">N=4,812</span>
+</div>
+<div class="my-auto">
+<div class="text-2xl font-semibold tracking-tight text-slate-900">3.2<span class="text-base font-normal text-slate-400">%</span></div>
+</div>
+<div class="text-[11px] text-slate-400">96.8% token precision</div>
+</div>
+<!-- RTF -->
+<div class="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+<div class="flex items-center justify-between">
+<span class="text-xs text-slate-500 font-normal">Real-Time Factor</span>
+<span class="text-[11px] font-medium text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded">2.6x</span>
+</div>
+<div class="my-auto">
+<div class="text-2xl font-semibold tracking-tight text-slate-900">0.38<span class="text-base font-normal text-slate-400">x</span></div>
+</div>
+<div class="text-[11px] text-slate-400">45.6s proc for 120s audio</div>
+</div>
+<!-- Latency -->
+<div class="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+<div class="flex items-center justify-between">
+<span class="text-xs text-slate-500 font-normal">Median Latency</span>
+<span class="text-[11px] font-mono text-slate-400">p95: 490ms</span>
+</div>
+<div class="my-auto">
+<div class="text-2xl font-semibold tracking-tight text-slate-900">320<span class="text-base font-normal text-slate-400">ms</span></div>
+</div>
+<div class="text-[11px] text-slate-400">VAD processing: 40ms</div>
+</div>
+</div>
+<!-- 4. Clean Collapsed Diagnostics Accordion -->
+<div class="bg-white rounded-lg border border-gray-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.02)] overflow-hidden">
+<button class="w-full px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors text-left" id="toggle-diff">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[17px] text-slate-400">tune</span>
+<span class="text-xs font-medium text-slate-700">Detailed Alignment Diff &amp; Acoustic Curves</span>
+<span class="text-[11px] text-slate-400 font-normal hidden sm:inline">— Sample #CV-UTT-0492</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[11px] text-slate-400 font-mono">3 ops · 7.69% WER</span>
+<span class="material-symbols-outlined text-slate-400 text-[18px] transition-transform" id="diff-chevron">expand_more</span>
+</div>
+</button>
+<!-- Accordion Body (Collapsed by Default) -->
+<div class="hidden px-5 pb-6 pt-2 border-t border-gray-100 space-y-6" id="diff-content">
+<!-- Levenshtein Token Alignment -->
+<div class="space-y-3 pt-2">
+<div class="flex items-center justify-between text-xs text-slate-500">
+<span class="font-medium text-slate-700">Token Alignment Inspector</span>
+<div class="flex items-center gap-2.5 text-[11px]">
+<span class="inline-flex items-center gap-1 text-slate-600"><span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Match</span>
+<span class="inline-flex items-center gap-1 text-amber-700"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Substitute</span>
+<span class="inline-flex items-center gap-1 text-rose-700"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Delete</span>
+<span class="inline-flex items-center gap-1 text-blue-700"><span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span> Insert</span>
+</div>
+</div>
+<!-- Waveform preview line -->
+<div class="p-3 bg-slate-50/60 rounded-md border border-gray-200/60 flex items-center justify-between gap-4">
+<div class="flex items-center gap-2.5">
+<button class="w-7 h-7 rounded-full bg-white border border-gray-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 transition shadow-xs" id="playback-btn">
+<span class="material-symbols-outlined text-[15px]">play_arrow</span>
+</button>
+<div class="text-[11px] text-slate-500">
+<span class="font-medium text-slate-700">Multi-Head Attention Explanation</span> · 16kHz Mono
+                </div>
+</div>
+<span class="font-mono text-[11px] text-slate-400" id="audio-time">00:03.12 / 00:08.42</span>
+</div>
+<!-- Diff Matrix -->
+<div class="space-y-2 text-xs font-mono">
+<div class="p-3 bg-slate-50/40 rounded-md border border-gray-200/50 flex flex-col md:flex-row gap-2">
+<span class="w-20 shrink-0 text-[11px] text-slate-400 uppercase font-sans">Reference</span>
+<div class="flex flex-wrap gap-1 text-slate-700">
+<span>The</span> <span>convolutional</span> <span>layer</span> <span>projects</span> <span>tensors</span> <span>into</span>
+<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70">Transformer</span>
+<span>blocks</span> <span>via</span>
+<span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200/70 line-through">eigenvalues</span>
+<span>and</span> <span>backpropagation.</span>
+</div>
+</div>
+<div class="p-3 bg-white rounded-md border border-gray-200/70 flex flex-col md:flex-row gap-2">
+<span class="w-20 shrink-0 text-[11px] text-slate-400 uppercase font-sans">Hypothesis</span>
+<div class="flex flex-wrap items-center gap-1 text-slate-700">
+<span>The</span> <span>convolutional</span> <span>layer</span> <span>projects</span> <span>tensors</span>
+<span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/70">+then</span>
+<span>into</span>
+<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70">Trans former</span>
+<span>blocks</span> <span>via</span>
+<span class="px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200/70 line-through">[DEL]</span>
+<span>and</span> <span>backpropagation.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Academic Recall Checklist & Acoustic Curve Grid -->
+<div class="pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Domain Recall -->
+<div class="space-y-2.5">
+<div class="text-xs font-medium text-slate-700">Technical Lexicon Recall</div>
+<div class="space-y-1.5">
+<div class="flex items-center justify-between p-2 rounded border border-gray-100 bg-slate-50/30 text-xs">
+<span class="text-slate-700 font-mono">Backpropagation</span>
+<span class="text-[11px] text-emerald-600 font-medium">100% Recalled</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded border border-gray-100 bg-slate-50/30 text-xs">
+<span class="text-slate-700 font-mono">Convolutional</span>
+<span class="text-[11px] text-emerald-600 font-medium">98.0% Recalled</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded border border-gray-100 bg-slate-50/30 text-xs">
+<span class="text-slate-700 font-mono">Eigenvalues</span>
+<span class="text-[11px] text-amber-600 font-medium">92.0% Partial</span>
+</div>
+</div>
+</div>
+<!-- Acoustic Robustness Curve -->
+<div class="space-y-2.5">
+<div class="flex items-center justify-between text-xs">
+<span class="font-medium text-slate-700">Acoustic Degradation Curve</span>
+<span class="text-[11px] text-slate-400">Clean → Auditorium Reverb</span>
+</div>
+<div class="h-24 bg-slate-50/40 rounded border border-gray-100 p-2 flex items-end">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 300 80">
+<path d="M 0 70 C 80 68, 180 50, 300 22" fill="none" stroke="#3b82f6" stroke-width="2"></path>
+<path d="M 0 74 C 80 70, 180 60, 300 38" fill="none" stroke="#cbd5e1" stroke-dasharray="3 3" stroke-width="1.5"></path>
+<circle cx="0" cy="70" fill="#3b82f6" r="3"></circle>
+<circle cx="180" cy="50" fill="#3b82f6" r="3"></circle>
+<circle cx="300" cy="22" fill="#3b82f6" r="3"></circle>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 5. Minimal Historical Experiment Registry (shadcn-style table) -->
+<div class="space-y-3">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div>
+<h2 class="text-sm font-semibold tracking-tight text-slate-900">Run History</h2>
+<p class="text-xs text-slate-400">All local benchmarks evaluated in this environment</p>
+</div>
+<!-- Table Search -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[15px]">search</span>
+<input class="h-8 pl-8 pr-3 bg-white border border-gray-200/80 rounded-md text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-slate-400 w-48 sm:w-56 transition-colors shadow-2xs" id="table-search" placeholder="Filter runs..." type="text"/>
+</div>
+</div>
+<div class="bg-white rounded-lg border border-gray-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.02)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="border-b border-gray-100 text-slate-400 font-normal">
+<th class="py-3 px-4 font-normal">Run</th>
+<th class="py-3 px-4 font-normal">Date</th>
+<th class="py-3 px-4 font-normal">Model</th>
+<th class="py-3 px-4 font-normal">Dataset</th>
+<th class="py-3 px-4 font-normal">Acoustic</th>
+<th class="py-3 px-4 font-normal text-right">WER</th>
+<th class="py-3 px-4 font-normal text-right">RTF</th>
+<th class="py-3 px-4 font-normal text-center">Status</th>
+<th class="py-3 px-4 font-normal text-right"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100 text-slate-600">
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="py-3 px-4 font-mono text-slate-900">#889</td>
+<td class="py-3 px-4 text-slate-400 font-mono text-[11px]">Nov 04, 14:22</td>
+<td class="py-3 px-4 font-medium text-slate-800">Whisper-Tiny (WebGPU)</td>
+<td class="py-3 px-4 text-slate-500">Common Voice ID</td>
+<td class="py-3 px-4 text-slate-500">Baseline Clean</td>
+<td class="py-3 px-4 text-right font-mono font-medium text-slate-900">8.4%</td>
+<td class="py-3 px-4 text-right font-mono text-slate-500">0.38x</td>
+<td class="py-3 px-4 text-center">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700">Pass</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-slate-400 hover:text-slate-700 transition">View</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="py-3 px-4 font-mono text-slate-900">#888</td>
+<td class="py-3 px-4 text-slate-400 font-mono text-[11px]">Nov 04, 12:10</td>
+<td class="py-3 px-4 font-medium text-slate-800">faster-whisper (Base)</td>
+<td class="py-3 px-4 text-slate-500">Common Voice ID</td>
+<td class="py-3 px-4 text-slate-500">Baseline Clean</td>
+<td class="py-3 px-4 text-right font-mono font-medium text-slate-900">6.9%</td>
+<td class="py-3 px-4 text-right font-mono text-slate-500">0.82x</td>
+<td class="py-3 px-4 text-center">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700">Pass</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-slate-400 hover:text-slate-700 transition">View</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="py-3 px-4 font-mono text-slate-900">#887</td>
+<td class="py-3 px-4 text-slate-400 font-mono text-[11px]">Nov 03, 18:45</td>
+<td class="py-3 px-4 font-medium text-slate-800">Whisper-Tiny (WebGPU)</td>
+<td class="py-3 px-4 text-slate-500">CS50 Lecture Audio</td>
+<td class="py-3 px-4 text-slate-500">Reverb RT60</td>
+<td class="py-3 px-4 text-right font-mono font-medium text-amber-600">11.2%</td>
+<td class="py-3 px-4 text-right font-mono text-slate-500">0.41x</td>
+<td class="py-3 px-4 text-center">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700">Pass</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-slate-400 hover:text-slate-700 transition">View</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="py-3 px-4 font-mono text-slate-900">#886</td>
+<td class="py-3 px-4 text-slate-400 font-mono text-[11px]">Nov 02, 09:14</td>
+<td class="py-3 px-4 font-medium text-slate-800">Whisper-Tiny (WebGPU)</td>
+<td class="py-3 px-4 text-slate-500">CS50 Lecture Audio</td>
+<td class="py-3 px-4 text-slate-500">Fast Speech</td>
+<td class="py-3 px-4 text-right font-mono font-medium text-rose-600">15.8%</td>
+<td class="py-3 px-4 text-right font-mono text-slate-500">0.39x</td>
+<td class="py-3 px-4 text-center">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700">Warn</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-slate-400 hover:text-slate-700 transition">View</button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="py-3 px-4 font-mono text-slate-900">#885</td>
+<td class="py-3 px-4 text-slate-400 font-mono text-[11px]">Nov 01, 16:30</td>
+<td class="py-3 px-4 font-medium text-slate-800">Whisper-Tiny (Wasm)</td>
+<td class="py-3 px-4 text-slate-500">Common Voice ID</td>
+<td class="py-3 px-4 text-slate-500">Baseline Clean</td>
+<td class="py-3 px-4 text-right font-mono font-medium text-slate-900">8.6%</td>
+<td class="py-3 px-4 text-right font-mono text-rose-600">1.48x</td>
+<td class="py-3 px-4 text-center">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-rose-50 text-rose-700">Degraded</span>
+</td>
+<td class="py-3 px-4 text-right">
+<button class="text-slate-400 hover:text-slate-700 transition">View</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Subtle Table Pagination -->
+<div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-slate-400">
+<span>Showing 1 to 5 of 48 runs</span>
+<div class="flex items-center gap-1">
+<button class="px-2 py-1 rounded hover:bg-slate-50 text-slate-500 transition">Previous</button>
+<button class="px-2 py-1 rounded bg-slate-100 text-slate-800 font-medium">1</button>
+<button class="px-2 py-1 rounded hover:bg-slate-50 text-slate-500 transition">2</button>
+<button class="px-2 py-1 rounded hover:bg-slate-50 text-slate-500 transition">Next</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Minimal Interactive Script -->
+<script>
+    (function () {
+      // 1. Accordion Toggle
+      const toggleDiff = document.getElementById('toggle-diff');
+      const diffContent = document.getElementById('diff-content');
+      const diffChevron = document.getElementById('diff-chevron');
+      if (toggleDiff && diffContent && diffChevron) {
+        toggleDiff.addEventListener('click', () => {
+          const isHidden = diffContent.classList.toggle('hidden');
+          diffChevron.textContent = isHidden ? 'expand_more' : 'expand_less';
+        });
+      }
+
+      // 2. Minimal Segmented Controls (Corpus Tabs)
+      const corpusTabs = document.querySelectorAll('.corpus-tab');
+      corpusTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          corpusTabs.forEach((t) => {
+            t.classList.remove('bg-white', 'text-slate-900', 'font-medium', 'shadow-[0_1px_1px_rgba(0,0,0,0.04)]');
+            t.classList.add('text-slate-500');
+          });
+          tab.classList.add('bg-white', 'text-slate-900', 'font-medium', 'shadow-[0_1px_1px_rgba(0,0,0,0.04)]');
+          tab.classList.remove('text-slate-500');
+        });
+      });
+
+      // 3. Condition Chips
+      const conditionChips = document.querySelectorAll('.condition-chip');
+      conditionChips.forEach((chip) => {
+        chip.addEventListener('click', () => {
+          conditionChips.forEach((c) => {
+            c.classList.remove('bg-white', 'text-slate-900', 'font-medium', 'shadow-[0_1px_1px_rgba(0,0,0,0.04)]');
+            c.classList.add('text-slate-500');
+          });
+          chip.classList.add('bg-white', 'text-slate-900', 'font-medium', 'shadow-[0_1px_1px_rgba(0,0,0,0.04)]');
+          chip.classList.remove('text-slate-500');
+        });
+      });
+
+      // 4. Playback Simulation
+      const playBtn = document.getElementById('playback-btn');
+      const timeDisplay = document.getElementById('audio-time');
+      let isPlaying = false;
+      let timer = null;
+      let currentSec = 3.12;
+
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          isPlaying = !isPlaying;
+          if (isPlaying) {
+            playBtn.innerHTML = '<span class="material-symbols-outlined text-[15px]">pause</span>';
+            timer = setInterval(() => {
+              currentSec += 0.1;
+              if (currentSec >= 8.42) currentSec = 0.0;
+              if (timeDisplay) {
+                timeDisplay.textContent = `00:0${currentSec.toFixed(2)} / 00:08.42`;
+              }
+            }, 100);
+          } else {
+            playBtn.innerHTML = '<span class="material-symbols-outlined text-[15px]">play_arrow</span>';
+            clearInterval(timer);
+          }
+        });
+      }
+
+      // 5. Run Benchmark Action
+      const runBtn = document.getElementById('btn-run-benchmark');
+      if (runBtn) {
+        runBtn.addEventListener('click', () => {
+          const originalContent = runBtn.innerHTML;
+          runBtn.innerHTML = '<span class="material-symbols-outlined text-[15px] animate-spin">refresh</span> <span>Running...</span>';
+          runBtn.disabled = true;
+
+          setTimeout(() => {
+            runBtn.innerHTML = '<span class="material-symbols-outlined text-[15px]">done</span> <span>Done</span>';
+            setTimeout(() => {
+              runBtn.innerHTML = originalContent;
+              runBtn.disabled = false;
+            }, 1500);
+          }, 1200);
+        });
+      }
+
+      // 6. CSV Export Action
+      const exportBtn = document.getElementById('btn-export-csv');
+      if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+          const originalContent = exportBtn.innerHTML;
+          exportBtn.innerHTML = '<span class="material-symbols-outlined text-[15px] text-emerald-600">done</span> <span>Exported</span>';
+          setTimeout(() => {
+            exportBtn.innerHTML = originalContent;
+          }, 1500);
+        });
+      }
+    })();
+  </script>
+</body></html>
