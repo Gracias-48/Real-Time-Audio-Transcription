@@ -61,7 +61,7 @@ async def ws_asr(ws: WebSocket) -> None:
                 text = msg.get("text") or "{}"
                 req = json.loads(text)
                 if req.get("type") == "load":
-                    model = req.get("model", "tiny.en")
+                    model = req.get("model", "tiny")
                     try:
                         _, device, ctype = await asyncio.to_thread(asr.get, model)
                         await ws.send_json({"type": "loaded", "model": model, "device": device, "computeType": ctype})
@@ -74,7 +74,12 @@ async def ws_asr(ws: WebSocket) -> None:
             audio = np.frombuffer(pcm_bytes[: len(pcm_bytes) // 4 * 4], dtype=np.float32)
             try:
                 r = await asyncio.to_thread(
-                    asr.transcribe, audio, header.get("model", "tiny.en"), bool(header.get("final")), header.get("prompt")
+                    asr.transcribe,
+                    audio,
+                    header.get("model", "tiny"),
+                    bool(header.get("final")),
+                    header.get("prompt"),
+                    header.get("language", "id"),
                 )
                 await ws.send_json(
                     {"id": header.get("id"), "text": r.text, "ms": r.decode_ms, "audioS": r.audio_s, "rtf": r.rtf, "device": r.device}

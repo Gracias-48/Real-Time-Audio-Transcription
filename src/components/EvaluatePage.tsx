@@ -218,14 +218,14 @@ export const EvaluatePage: React.FC = () => {
 
       const engine =
         modelTarget === 'python'
-          ? new PythonServerEngine(settings.serverUrl, settings.pythonModel)
+          ? new PythonServerEngine(settings.serverUrl, settings.pythonModel, targetLang)
           : new BrowserWhisperEngine(settings.browserModel, settings.device, targetLang)
 
       setStatusText(`Loading engine (${engine.label})...`)
       await engine.load(() => {})
 
       setStatusText('Decoding benchmark audio...')
-      const decodeRes = await engine.transcribe(audioData, { final: true })
+      const decodeRes = await engine.transcribe(audioData, { final: true, prompt: settings.glossaryPrompt })
       engine.dispose()
 
       const latency = Math.round(performance.now() - t0)

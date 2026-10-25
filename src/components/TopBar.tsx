@@ -64,7 +64,11 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenExport, on
         {/* Engine status beacon */}
         <div className="hidden md:flex items-center gap-1.5 ml-2 pl-3 border-l border-gray-100">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] text-slate-500 font-normal">WebGPU · Local</span>
+          <span className="text-[11px] text-slate-500 font-normal">
+            {settings.engine === 'browser'
+              ? `Whisper ${settings.browserModel.toUpperCase()} (WebGPU/WASM)`
+              : `Python Whisper ${settings.pythonModel.toUpperCase()} (Local)`}
+          </span>
         </div>
       </div>
 

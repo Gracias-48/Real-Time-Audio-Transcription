@@ -28,13 +28,13 @@ const DEFAULT_SETTINGS: Settings = {
   serverUrl: 'ws://127.0.0.1:8765',
   serverVad: false,
   vadThreshold: 0.35,
-  redemptionMs: 600,
-  minSpeechMs: 250,
-  preSpeechPadMs: 300,
+  redemptionMs: 700,
+  minSpeechMs: 200,
+  preSpeechPadMs: 400,
   partialIntervalMs: 800,
   maxUtteranceS: 15,
   glossaryPrompt:
-    'sistem operasi, jaringan komputer, pembelajaran mesin, kecerdasan buatan, basis data, algoritma, rekayasa perangkat lunak',
+    'Transkripsi perkuliahan dalam bahasa Indonesia. Istilah: sistem operasi, jaringan komputer, pembelajaran mesin, kecerdasan buatan, basis data, algoritma, rekayasa perangkat lunak.',
   autoScroll: true,
 }
 

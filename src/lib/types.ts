@@ -13,7 +13,7 @@ export interface ASREngine {
   /** Device actually used after load (e.g. "webgpu", "wasm", "cuda", "cpu"). */
   device: string
   load(onProgress: (p: number) => void): Promise<void>
-  transcribe(audio: Float32Array, opts: { final: boolean }): Promise<TranscribeResult>
+  transcribe(audio: Float32Array, opts: { final: boolean; prompt?: string }): Promise<TranscribeResult>
   dispose(): void
 }
 

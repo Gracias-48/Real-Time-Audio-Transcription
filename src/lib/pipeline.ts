@@ -32,7 +32,7 @@ export class TranscriptionPipeline {
     }
 
     if (settings.engine === 'python') {
-      this.engine = new PythonServerEngine(settings.serverUrl, settings.pythonModel)
+      this.engine = new PythonServerEngine(settings.serverUrl, settings.pythonModel, settings.language)
     } else {
       this.engine = new BrowserWhisperEngine(settings.browserModel, settings.device, settings.language)
     }
@@ -164,7 +164,7 @@ export class TranscriptionPipeline {
 
     const t0 = performance.now()
     try {
-      const res = await this.engine.transcribe(audio, { final: false })
+      const res = await this.engine.transcribe(audio, { final: false, prompt: settings.glossaryPrompt })
       const latencyMs = Math.round(performance.now() - t0)
       const audioMs = (audio.length / 16000) * 1000
       const rtf = Number(((res.ms / 1000) / (audioMs / 1000)).toFixed(2))
@@ -208,7 +208,7 @@ export class TranscriptionPipeline {
     const t0 = performance.now()
 
     try {
-      const res = await this.engine.transcribe(audio, { final: true })
+      const res = await this.engine.transcribe(audio, { final: true, prompt: settings.glossaryPrompt })
       const latencyMs = Math.round(performance.now() - t0)
       const audioMs = (audio.length / 16000) * 1000
       const rtf = Number(((res.ms / 1000) / (audioMs / 1000)).toFixed(2))

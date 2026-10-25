@@ -72,20 +72,26 @@ def load_audio_mp3(path: str, sr: int = 16000) -> np.ndarray:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tsv", default="../cv-corpus-27.0-2026-09-11/id/test.tsv")
-    parser.add_argument("--clips", default="../cv-corpus-27.0-2026-09-11/id/clips")
+    parser.add_argument("--tsv", default="cv-corpus-27.0-2026-09-11/id/test.tsv")
+    parser.add_argument("--clips", default="cv-corpus-27.0-2026-09-11/id/clips")
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--model", default="tiny")
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--prompt", default="", help="Initial Indonesian vocabulary prompt for prompt biasing")
     parser.add_argument("--output", default="cv_benchmark_results.csv")
     args = parser.parse_args()
 
     tsv_path = os.path.abspath(args.tsv)
     clips_dir = os.path.abspath(args.clips)
-
     if not os.path.isfile(tsv_path):
-        print(f"Error: TSV file not found at {tsv_path}")
-        return
+        # Fall back to parent directory if running from server/
+        alt_tsv = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", args.tsv))
+        if os.path.isfile(alt_tsv):
+            tsv_path = alt_tsv
+            clips_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", args.clips))
+        else:
+            print(f"Error: TSV file not found at {tsv_path}")
+            return
 
     print(f"Loading ASR Service for model '{args.model}'...")
     svc = ASRService(preferred_device=args.device)
@@ -111,7 +117,7 @@ def main():
         audio_dur = len(audio) / 16000
 
         t0 = time.perf_counter()
-        res = svc.transcribe(audio, args.model, final=True)
+        res = svc.transcribe(audio, args.model, final=True, initial_prompt=args.prompt or None)
         latency_ms = (time.perf_counter() - t0) * 1000.0
 
         ref_norm = normalize_text(row["sentence"])

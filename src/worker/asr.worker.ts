@@ -137,6 +137,10 @@ self.onmessage = async (e: MessageEvent) => {
       const genOptions: any = {
         return_timestamps: false,
         chunk_length_s: 30,
+        generate_kwargs: {
+          temperature: 0.0,
+          repetition_penalty: 1.1,
+        },
       }
 
       if (!isEnglishOnly) {
@@ -149,6 +153,7 @@ self.onmessage = async (e: MessageEvent) => {
 
       if (prompt) {
         genOptions.initial_prompt = prompt
+        genOptions.generate_kwargs.initial_prompt = prompt
       }
 
       const t0 = performance.now()

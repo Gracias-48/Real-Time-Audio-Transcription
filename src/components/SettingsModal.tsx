@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../lib/store'
-import type { BrowserModel, DevicePref } from '../lib/types'
+import type { BrowserModel, DevicePref, PythonModel } from '../lib/types'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -145,31 +145,47 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           {/* Python Server Config */}
           {settings.engine === 'python' && (
             <div className="space-y-3 p-4 bg-slate-50/80 rounded-lg border border-gray-200/60">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  WebSocket Server Endpoint
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={settings.serverUrl}
-                    onChange={(e) => updateSettings({ serverUrl: e.target.value })}
-                    className="flex-1 bg-white border border-gray-200 rounded-md p-2 text-xs font-mono text-slate-900 focus:outline-none"
-                    placeholder="ws://127.0.0.1:8765"
-                  />
-                  <button
-                    type="button"
-                    onClick={checkPythonServer}
-                    disabled={isCheckingHealth}
-                    className="px-3 py-1 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Python Whisper Model
+                  </label>
+                  <select
+                    value={settings.pythonModel}
+                    onChange={(e) => updateSettings({ pythonModel: e.target.value as PythonModel })}
+                    className="w-full bg-white border border-gray-200 rounded-md p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
                   >
-                    {isCheckingHealth ? 'Testing...' : 'Test'}
-                  </button>
+                    <option value="tiny">whisper-tiny (Fastest - 39M)</option>
+                    <option value="base">whisper-base (Recommended - 74M)</option>
+                    <option value="small">whisper-small (Highest Accuracy - 244M)</option>
+                  </select>
                 </div>
-                {serverHealth && (
-                  <div className="mt-2 text-xs font-mono text-slate-600">{serverHealth}</div>
-                )}
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    WebSocket Server Endpoint
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={settings.serverUrl}
+                      onChange={(e) => updateSettings({ serverUrl: e.target.value })}
+                      className="flex-1 bg-white border border-gray-200 rounded-md p-2 text-xs font-mono text-slate-900 focus:outline-none"
+                      placeholder="ws://127.0.0.1:8765"
+                    />
+                    <button
+                      type="button"
+                      onClick={checkPythonServer}
+                      disabled={isCheckingHealth}
+                      className="px-3 py-1 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isCheckingHealth ? 'Testing...' : 'Test'}
+                    </button>
+                  </div>
+                </div>
               </div>
+              {serverHealth && (
+                <div className="mt-1 text-xs font-mono text-slate-600">{serverHealth}</div>
+              )}
             </div>
           )}
 

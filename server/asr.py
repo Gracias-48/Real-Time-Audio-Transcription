@@ -140,12 +140,13 @@ class ASRService:
             transcribe_kwargs = dict(
                 beam_size=beam_size_final if final else 1,
                 best_of=1,
-                temperature=[0.0, 0.2, 0.4] if final else 0.0,
+                temperature=[0.0, 0.2] if final else 0.0,
                 condition_on_previous_text=False,
                 without_timestamps=True,
                 vad_filter=False,  # VAD is done upstream
                 initial_prompt=initial_prompt or None,
                 no_speech_threshold=0.6,
+                repetition_penalty=1.1,
             )
             if not is_en_only:
                 if language and language != "auto":

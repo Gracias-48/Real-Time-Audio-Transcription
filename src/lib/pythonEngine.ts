@@ -11,10 +11,16 @@ export class PythonServerEngine implements ASREngine {
   private isLoaded = false
   private serverUrl: string
   private model: PythonModel
+  language: string
 
-  constructor(serverUrl: string = 'ws://127.0.0.1:8765', model: PythonModel = 'tiny.en') {
+  constructor(
+    serverUrl: string = 'ws://127.0.0.1:8765',
+    model: PythonModel = 'tiny',
+    language: string = 'id'
+  ) {
     this.serverUrl = serverUrl
     this.model = model
+    this.language = language
   }
 
   async load(onProgress: (p: number) => void): Promise<void> {
@@ -82,7 +88,7 @@ export class PythonServerEngine implements ASREngine {
     })
   }
 
-  async transcribe(audio: Float32Array, opts: { final: boolean }): Promise<TranscribeResult> {
+  async transcribe(audio: Float32Array, opts: { final: boolean; prompt?: string }): Promise<TranscribeResult> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error('Python server WebSocket is not connected.')
     }
@@ -92,6 +98,8 @@ export class PythonServerEngine implements ASREngine {
       id: reqId,
       final: opts.final,
       model: this.model,
+      prompt: opts.prompt,
+      language: this.language,
     })
 
     const headerBytes = new TextEncoder().encode(header)

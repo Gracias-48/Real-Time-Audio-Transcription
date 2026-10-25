@@ -70,7 +70,7 @@ export class BrowserWhisperEngine implements ASREngine {
     })
   }
 
-  async transcribe(audio: Float32Array, opts: { final: boolean }): Promise<TranscribeResult> {
+  async transcribe(audio: Float32Array, opts: { final: boolean; prompt?: string }): Promise<TranscribeResult> {
     if (!this.worker || !this.isLoaded) {
       throw new Error('Browser Whisper engine is not loaded.')
     }
@@ -92,6 +92,7 @@ export class BrowserWhisperEngine implements ASREngine {
           audio,
           final: opts.final,
           language: this.language,
+          prompt: opts.prompt,
         },
       })
     })
