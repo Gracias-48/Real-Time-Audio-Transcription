@@ -70,12 +70,17 @@ export class BrowserWhisperEngine implements ASREngine {
     })
   }
 
-  async transcribe(audio: Float32Array, opts: { final: boolean; prompt?: string }): Promise<TranscribeResult> {
+  async transcribe(
+    audio: Float32Array,
+    opts: { final: boolean; prompt?: string; language?: string }
+  ): Promise<TranscribeResult> {
     if (!this.worker || !this.isLoaded) {
       throw new Error('Browser Whisper engine is not loaded.')
     }
 
     const reqId = this.nextReqId++
+    const activeLang = opts.language || this.language
+    this.language = activeLang
 
     return new Promise<TranscribeResult>((resolve, reject) => {
       this.pending.set(reqId, {
@@ -91,7 +96,7 @@ export class BrowserWhisperEngine implements ASREngine {
         data: {
           audio,
           final: opts.final,
-          language: this.language,
+          language: activeLang,
           prompt: opts.prompt,
         },
       })

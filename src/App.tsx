@@ -12,10 +12,15 @@ import { useAppStore } from './lib/store'
 import { pipelineInstance } from './lib/pipeline'
 
 export const App: React.FC = () => {
-  const { currentTab, setCurrentTab, settings } = useAppStore()
+  const { currentTab, setCurrentTab, settings, toast, dismissToast } = useAppStore()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  // Live-sync language changes directly into the active multilingual Whisper engine (no restart needed!)
+  useEffect(() => {
+    pipelineInstance.syncLiveLanguage(settings.language)
+  }, [settings.language])
 
   // Sync initial URL path to currentTab, and listen to browser popstate (back/forward)
   useEffect(() => {
@@ -160,6 +165,43 @@ export const App: React.FC = () => {
       {/* Native <dialog> Modals */}
       <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      {/* Live Notification Toast (Language Switch / Restart Hint) */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border shadow-lg flex items-center gap-2.5 text-xs font-medium max-w-md ${
+            toast.tone === 'warning'
+              ? 'bg-amber-50 border-amber-200 text-amber-900'
+              : 'bg-slate-900 border-slate-800 text-white'
+          }`}
+        >
+          <span
+            className={`material-symbols-outlined text-[17px] shrink-0 ${
+              toast.tone === 'warning' ? 'text-amber-600' : 'text-emerald-400'
+            }`}
+            aria-hidden="true"
+          >
+            {toast.tone === 'warning' ? 'warning' : 'translate'}
+          </span>
+          <span>{toast.message}</span>
+          <button
+            type="button"
+            onClick={dismissToast}
+            aria-label="Dismiss notification"
+            className={`p-0.5 rounded transition cursor-pointer shrink-0 ${
+              toast.tone === 'warning'
+                ? 'text-amber-700 hover:bg-amber-100'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
+              close
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

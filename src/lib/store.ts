@@ -226,6 +226,7 @@ interface AppState {
   audioLevel: number
   isClipping: boolean
   micSilentWarning: boolean
+  toast: { id: number; message: string; tone: 'info' | 'warning' } | null
   importJob: ImportJobState | null
   latencyMs: number
   rtf: number
@@ -242,6 +243,8 @@ interface AppState {
   setIsSpeaking: (isSpeaking: boolean) => void
   setAudioLevel: (level: number, clipping?: boolean) => void
   setMicSilentWarning: (silent: boolean) => void
+  showToast: (message: string, tone?: 'info' | 'warning') => void
+  dismissToast: () => void
   setImportJob: (job: ImportJobState | null) => void
   setDownloadProgress: (p: number | null) => void
   setFilterQuery: (query: string) => void
@@ -496,6 +499,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   audioLevel: 0,
   isClipping: false,
   micSilentWarning: false,
+  toast: null,
   importJob: null,
   latencyMs: 0,
   rtf: 0,
@@ -527,6 +531,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   setAudioLevel: (level, clipping = false) => set({ audioLevel: level, isClipping: clipping }),
   setMicSilentWarning: (silent) => set({ micSilentWarning: silent }),
+  showToast: (message, tone = 'info') => {
+    const id = Date.now()
+    set({ toast: { id, message, tone } })
+    setTimeout(() => {
+      if (get().toast?.id === id) {
+        set({ toast: null })
+      }
+    }, 4500)
+  },
+  dismissToast: () => set({ toast: null }),
   setImportJob: (job) => set({ importJob: job }),
   setDownloadProgress: (p) => set({ downloadProgress: p }),
   setFilterQuery: (query) => set({ filterQuery: query }),
@@ -745,15 +759,46 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateSettings: (partial) => {
+    const prev = get()
+    const isActiveSession = prev.status === 'listening' || prev.status === 'paused'
+
     set((state) => {
       const updated = { ...state.settings, ...partial }
       try {
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated))
+        if (hasLocalStorage()) {
+          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated))
+        }
       } catch (err) {
         console.warn(err)
       }
       return { settings: updated }
     })
+
+    if (isActiveSession) {
+      const needsRestart =
+        (partial.engine !== undefined && partial.engine !== prev.settings.engine) ||
+        (partial.browserModel !== undefined &&
+          partial.browserModel !== prev.settings.browserModel) ||
+        (partial.pythonModel !== undefined && partial.pythonModel !== prev.settings.pythonModel) ||
+        (partial.device !== undefined && partial.device !== prev.settings.device) ||
+        (partial.audioSource !== undefined && partial.audioSource !== prev.settings.audioSource) ||
+        (partial.micDeviceId !== undefined && partial.micDeviceId !== prev.settings.micDeviceId) ||
+        (partial.noiseConditioning !== undefined &&
+          partial.noiseConditioning !== prev.settings.noiseConditioning)
+
+      if (needsRestart) {
+        get().showToast(
+          'Model or audio input changed — stop and restart recording to apply.',
+          'warning'
+        )
+      } else if (partial.language !== undefined && partial.language !== prev.settings.language) {
+        const langName = partial.language === 'en' ? 'English (EN)' : 'Bahasa Indonesia (ID)'
+        get().showToast(
+          `Switched live transcription to ${langName} — active immediately!`,
+          'info'
+        )
+      }
+    }
   },
 
   resetSession: () => {

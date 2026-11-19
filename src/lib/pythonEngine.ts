@@ -88,18 +88,23 @@ export class PythonServerEngine implements ASREngine {
     })
   }
 
-  async transcribe(audio: Float32Array, opts: { final: boolean; prompt?: string }): Promise<TranscribeResult> {
+  async transcribe(
+    audio: Float32Array,
+    opts: { final: boolean; prompt?: string; language?: string }
+  ): Promise<TranscribeResult> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error('Python server WebSocket is not connected.')
     }
 
     const reqId = this.nextReqId++
+    const activeLang = opts.language || this.language
+    this.language = activeLang
     const header = JSON.stringify({
       id: reqId,
       final: opts.final,
       model: this.model,
       prompt: opts.prompt,
-      language: this.language,
+      language: activeLang,
     })
 
     const headerBytes = new TextEncoder().encode(header)

@@ -9,9 +9,10 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
-  const { settings, updateSettings, startNewSession } = useAppStore()
+  const { settings, updateSettings, startNewSession, status } = useAppStore()
   const dialogRef = useModalDialog(isOpen, onClose)
   const titleId = useId()
+  const isRecordingActive = status === 'listening' || status === 'paused'
 
   const [serverHealth, setServerHealth] = useState<string | null>(null)
   const [isCheckingHealth, setIsCheckingHealth] = useState(false)
@@ -117,6 +118,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         {/* Settings Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 text-sm text-slate-700">
+          {isRecordingActive && (
+            <div className="px-3.5 py-2.5 rounded-lg bg-blue-50 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2">
+              <span className="material-symbols-outlined text-[16px] text-blue-600 mt-0.5 shrink-0" aria-hidden="true">
+                info
+              </span>
+              <span>
+                <strong>Recording is active:</strong> Changing <strong>Language</strong> or{' '}
+                <strong>Glossary</strong> applies live immediately. Changing{' '}
+                <strong>Model</strong>, <strong>Engine</strong>, or <strong>Audio Input</strong>{' '}
+                requires stopping and starting the lecture again.
+              </span>
+            </div>
+          )}
+
           {/* Audio Capture & Conditioning (Meetily-inspired) */}
           <div className="space-y-3 p-4 bg-slate-50/80 rounded-lg border border-gray-200/60">
             <div className="flex items-center justify-between">

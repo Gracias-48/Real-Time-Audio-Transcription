@@ -192,14 +192,24 @@ export class TranscriptionPipeline {
       settings.engine,
       settings.engine === 'browser' ? settings.browserModel : settings.pythonModel,
       settings.device,
-      settings.language,
       settings.serverUrl,
     ].join('|')
+  }
+
+  /** Instantly syncs language changes to the running multilingual Whisper engine with zero restart. */
+  syncLiveLanguage(language: string): void {
+    if (this.engine) {
+      this.engine.language = language
+    }
+    if (this.isRunning && this.isSpeaking) {
+      useAppStore.getState().setPartialText('')
+    }
   }
 
   async initialize(settings: Settings, onProgress: (p: number) => void): Promise<void> {
     const nextKey = this.buildEngineKey(settings)
     if (this.engine && this.engineConfigKey === nextKey) {
+      this.engine.language = settings.language
       onProgress(100)
       return
     }
@@ -605,7 +615,7 @@ export class TranscriptionPipeline {
           if (!this.isRunning || this.isPaused) return
           if (this.isSpeaking) {
             this.utteranceChunks.push(new Float32Array(frame))
-            this.checkPartialOrMaxDuration(settings)
+            this.checkPartialOrMaxDuration(useAppStore.getState().settings)
           }
         },
 
@@ -614,11 +624,12 @@ export class TranscriptionPipeline {
           this.isSpeaking = false
           const s = useAppStore.getState()
           s.setIsSpeaking(false)
-          const speaker = this.resolveCurrentSpeaker(settings)
+          const liveSettings = s.settings
+          const speaker = this.resolveCurrentSpeaker(liveSettings)
           const audioToCommit =
             audio && audio.length > 16000 * 0.25 ? audio : this.flattenChunks()
           this.utteranceChunks = []
-          await this.commitUtterance(audioToCommit, settings, speaker)
+          await this.commitUtterance(audioToCommit, liveSettings, speaker)
         },
 
         onVADMisfire: () => {
@@ -759,6 +770,7 @@ export class TranscriptionPipeline {
       const res = await this.engine.transcribe(audio, {
         final: false,
         prompt: settings.glossaryPrompt,
+        language: settings.language,
       })
       const latencyMs = Math.round(performance.now() - t0)
       const audioMs = (audio.length / 16000) * 1000
@@ -811,6 +823,7 @@ export class TranscriptionPipeline {
       const res = await this.engine.transcribe(audio, {
         final: true,
         prompt: settings.glossaryPrompt,
+        language: settings.language,
       })
       const latencyMs = Math.round(performance.now() - t0)
       const audioMs = (audio.length / 16000) * 1000

@@ -12,8 +12,12 @@ export interface ASREngine {
   readonly label: string
   /** Device actually used after load (e.g. "webgpu", "wasm", "cuda", "cpu"). */
   device: string
+  language?: string
   load(onProgress: (p: number) => void): Promise<void>
-  transcribe(audio: Float32Array, opts: { final: boolean; prompt?: string }): Promise<TranscribeResult>
+  transcribe(
+    audio: Float32Array,
+    opts: { final: boolean; prompt?: string; language?: string }
+  ): Promise<TranscribeResult>
   dispose(): void
 }
 
