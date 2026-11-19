@@ -22,6 +22,9 @@ export type BrowserModel = 'tiny' | 'base' | 'tiny.en' | 'base.en'
 export type PythonModel = 'tiny' | 'base' | 'small' | 'tiny.en' | 'base.en' | 'small.en'
 export type Language = 'id' | 'en' | 'auto'
 export type DevicePref = 'auto' | 'webgpu' | 'wasm'
+export type AudioSourceMode = 'mic' | 'system' | 'mixed'
+export type SpeakerLabel = 'Lecturer' | 'You' | 'Imported'
+export type SummaryTemplate = 'executive' | 'cornell' | 'definitions' | 'checklist'
 
 export interface Sentence {
   id: string
@@ -30,6 +33,19 @@ export interface Sentence {
   text: string
   highlighted: boolean
   highlightedAt?: number
+  /** Optional speaker/channel attribution (dual-capture or imported audio). */
+  speaker?: SpeakerLabel
+  /** Marks sentences manually edited by the student. */
+  edited?: boolean
+}
+
+export interface ImportJobState {
+  active: boolean
+  filename: string
+  currentChunk: number
+  totalChunks: number
+  percent: number
+  mode: 'import' | 'retranscribe'
 }
 
 export type MetricKind = 'partial' | 'final'
@@ -65,6 +81,16 @@ export interface Settings {
   maxUtteranceS: number
   glossaryPrompt: string
   autoScroll: boolean
+  /** Audio capture source: microphone, browser tab/system audio, or both mixed. */
+  audioSource: AudioSourceMode
+  /** Selected microphone deviceId ('' = browser default). */
+  micDeviceId: string
+  /** Web Audio 80Hz high-pass + anti-clipping dynamics compressor. */
+  noiseConditioning: boolean
+  /** Save compressed session audio locally in IndexedDB for click-to-replay & retranscription. */
+  saveAudioRecording: boolean
+  /** Selected zero-API deterministic study notes template. */
+  summaryTemplate: SummaryTemplate
 }
 
-export type AppStatus = 'idle' | 'loading' | 'listening' | 'stopping' | 'error'
+export type AppStatus = 'idle' | 'loading' | 'listening' | 'paused' | 'importing' | 'stopping' | 'error'

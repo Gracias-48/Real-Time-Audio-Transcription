@@ -39,13 +39,43 @@ export const App: React.FC = () => {
     try {
       await pipelineInstance.start(settings)
     } catch (err: any) {
-      console.error('Failed to start microphone:', err)
-      alert(`Could not start microphone: ${err?.message || err}`)
+      console.error('Failed to start capture:', err)
+      alert(`Could not start audio capture: ${err?.message || err}`)
     }
   }
 
   const handleStop = async () => {
     await pipelineInstance.stop()
+  }
+
+  const handlePause = async () => {
+    await pipelineInstance.pause()
+  }
+
+  const handleResume = async () => {
+    await pipelineInstance.resume()
+  }
+
+  const handleImportAudio = async (file: File) => {
+    try {
+      await pipelineInstance.importAudioFile(file, settings)
+    } catch (err: any) {
+      console.error('Failed to import audio:', err)
+      alert(`Could not transcribe audio file: ${err?.message || err}`)
+    }
+  }
+
+  const handleCancelImport = () => {
+    pipelineInstance.cancelImport()
+  }
+
+  const handleRetranscribe = async () => {
+    try {
+      await pipelineInstance.retranscribeCurrentSession(settings)
+    } catch (err: any) {
+      console.error('Retranscribe failed:', err)
+      alert(`Could not retranscribe session audio: ${err?.message || err}`)
+    }
   }
 
   return (
@@ -74,7 +104,10 @@ export const App: React.FC = () => {
                 <div className="grid grid-cols-12 h-full w-full gap-4">
                   {/* LEFT PANEL: Live Lecture Feed (Cols 1-8 / ~65% on Desktop) */}
                   <div className="col-span-12 lg:col-span-8 h-full overflow-hidden">
-                    <TranscriptPanel />
+                    <TranscriptPanel
+                      onImportAudio={handleImportAudio}
+                      onRetranscribe={handleRetranscribe}
+                    />
                   </div>
 
                   {/* RIGHT PANEL: Key Lecture Notes (Cols 9-12 / ~35% on Desktop) */}
@@ -89,14 +122,21 @@ export const App: React.FC = () => {
             <BottomBar
               onStart={handleStart}
               onStop={handleStop}
+              onPause={handlePause}
+              onResume={handleResume}
               onExport={() => setIsExportOpen(true)}
+              onImportAudio={handleImportAudio}
+              onCancelImport={handleCancelImport}
             />
           </>
         )}
 
         {currentTab === 'archive' && (
           <main className="relative w-full flex-1 bg-[#fafafa]">
-            <SessionArchive onOpenExport={() => setIsExportOpen(true)} />
+            <SessionArchive
+              onOpenExport={() => setIsExportOpen(true)}
+              onImportAudio={handleImportAudio}
+            />
           </main>
         )}
 
@@ -107,7 +147,7 @@ export const App: React.FC = () => {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Native <dialog> Modals */}
       <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>

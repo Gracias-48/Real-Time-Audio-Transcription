@@ -71,3 +71,45 @@ export function finalizeSentence(t: string): string {
   const cap = s.charAt(0).toUpperCase() + s.slice(1)
   return /[.!?…"']$/.test(cap) ? cap : `${cap}.`
 }
+
+/** ms -> "HH:MM:SS,mmm" (standard SubRip / SRT subtitle timestamp). */
+export function formatSrtTimestamp(ms: number): string {
+  const clamped = Math.max(0, Math.round(ms))
+  const hours = Math.floor(clamped / 3600000)
+  const mins = Math.floor((clamped % 3600000) / 60000)
+  const secs = Math.floor((clamped % 60000) / 1000)
+  const millis = clamped % 1000
+  return (
+    [hours, mins, secs].map((v) => String(v).padStart(2, '0')).join(':') +
+    ',' +
+    String(millis).padStart(3, '0')
+  )
+}
+
+/** Escape HTML special characters so transcript text can never inject markup/XSS in print sheets. */
+export function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/** Safely replace all literal occurrences of `find` in `text`, returning updated text and hit count. */
+export function replaceTextOccurrences(
+  text: string,
+  find: string,
+  replaceWith: string,
+  caseSensitive: boolean = false
+): { text: string; count: number } {
+  if (!find) return { text, count: 0 }
+  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(escaped, caseSensitive ? 'g' : 'gi')
+  let count = 0
+  const updated = text.replace(regex, () => {
+    count += 1
+    return replaceWith
+  })
+  return { text: updated, count }
+}

@@ -1,14 +1,16 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../lib/store'
 import type { ArchivedSession } from '../lib/store'
 import { formatTimestamp } from '../lib/text'
-import { downloadFile } from '../lib/export'
+import { downloadFile, generateSrtExport } from '../lib/export'
+import { formatBytes, getAudioStorageUsage } from '../lib/audioStore'
 
 interface SessionArchiveProps {
   onOpenExport?: () => void
+  onImportAudio?: (file: File) => void
 }
 
-export const SessionArchive: React.FC<SessionArchiveProps> = () => {
+export const SessionArchive: React.FC<SessionArchiveProps> = ({ onImportAudio }) => {
   const {
     archivedSessions,
     currentSessionId,
@@ -17,11 +19,27 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
     deleteArchivedSession,
     renameArchivedSession,
     setCurrentTab,
+    audioVersion,
   } = useAppStore()
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const [audioSessionIds, setAudioSessionIds] = useState<Set<string>>(new Set())
+  const [audioStorageLabel, setAudioStorageLabel] = useState('0 KB')
+
+  useEffect(() => {
+    let active = true
+    void getAudioStorageUsage().then((stats) => {
+      if (!active) return
+      setAudioSessionIds(new Set(stats.sessionIds))
+      setAudioStorageLabel(formatBytes(stats.totalBytes))
+    })
+    return () => {
+      active = false
+    }
+  }, [archivedSessions.length, audioVersion])
 
   const filteredSessions = archivedSessions.filter((s) => {
     if (!searchQuery.trim()) return true
@@ -45,9 +63,12 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
     setEditingId(null)
   }
 
-  const handleExportSession = (session: ArchivedSession, format: 'markdown' | 'json') => {
+  const handleExportSession = (session: ArchivedSession, format: 'markdown' | 'json' | 'srt') => {
     const dateStr = new Date(session.createdAt).toLocaleDateString()
-    if (format === 'markdown') {
+    if (format === 'srt') {
+      const srt = generateSrtExport(session.sentences)
+      downloadFile(srt, `${session.id}-subtitles.srt`, 'application/x-subrip')
+    } else if (format === 'markdown') {
       const fullTranscript = session.sentences
         .map((s) => `[${formatTimestamp(s.startMs)}] ${s.text}`)
         .join('\n\n')
@@ -86,6 +107,33 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {onImportAudio && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm,.flac"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) onImportAudio(file)
+                  e.target.value = ''
+                }}
+                className="hidden"
+                aria-label="Import recorded audio file"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 px-3 rounded-md border border-gray-200 bg-white hover:bg-slate-50 text-[12px] font-medium text-slate-700 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[15px] text-slate-500" aria-hidden="true">
+                  upload_file
+                </span>
+                <span>Import Audio</span>
+              </button>
+            </>
+          )}
+
           <button
             type="button"
             onClick={() => {
@@ -93,7 +141,9 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
             }}
             className="h-8 px-3 rounded-md border border-gray-200 bg-white hover:bg-slate-50 text-[12px] font-medium text-slate-700 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[15px] text-slate-400">arrow_back</span>
+            <span className="material-symbols-outlined text-[15px] text-slate-400" aria-hidden="true">
+              arrow_back
+            </span>
             <span>Back to Live</span>
           </button>
 
@@ -105,8 +155,10 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
             }}
             className="h-8 px-3.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-[12px] font-medium transition flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[16px]">add</span>
-            <span>+ New Session</span>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+              add
+            </span>
+            <span>New Session</span>
           </button>
         </div>
       </div>
@@ -114,13 +166,17 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
       {/* Search & Actions Bar */}
       <div className="bg-white rounded-lg border border-gray-200/70 p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[240px]">
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">
+          <span
+            className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]"
+            aria-hidden="true"
+          >
             search
           </span>
           <input
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Filter archived sessions"
             placeholder="Filter sessions by title, notes, or keywords..."
             className="w-full h-8 pl-8 pr-3 bg-slate-50 border border-gray-200/80 rounded-md text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
           />
@@ -128,7 +184,8 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+              aria-label="Clear archive search"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
             >
               ✕
             </button>
@@ -136,7 +193,7 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
         </div>
 
         <div className="text-xs text-slate-400 font-mono">
-          Stored locally in IndexedDB / LocalStorage
+          Local IndexedDB Audio: <strong className="text-slate-700">{audioStorageLabel}</strong>
         </div>
       </div>
 
@@ -173,16 +230,17 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-gray-100 text-slate-400 font-normal bg-slate-50/50">
-                  <th className="py-3 px-4 font-normal">Session Title &amp; ID</th>
-                  <th className="py-3 px-4 font-normal">Date &amp; Time</th>
-                  <th className="py-3 px-4 font-normal text-center">Sentences</th>
-                  <th className="py-3 px-4 font-normal text-center">Starred</th>
-                  <th className="py-3 px-4 font-normal text-right">Actions</th>
+                  <th scope="col" className="py-3 px-4 font-normal">Session Title &amp; ID</th>
+                  <th scope="col" className="py-3 px-4 font-normal">Date &amp; Time</th>
+                  <th scope="col" className="py-3 px-4 font-normal text-center">Sentences</th>
+                  <th scope="col" className="py-3 px-4 font-normal text-center">Starred</th>
+                  <th scope="col" className="py-3 px-4 font-normal text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-slate-600">
                 {filteredSessions.map((session) => {
                   const isCurrent = currentSessionId === session.id
+                  const hasSavedAudio = Boolean(session.hasAudio) || audioSessionIds.has(session.id)
                   const date = new Date(session.createdAt)
                   const formattedDate = date.toLocaleDateString('en-US', {
                     month: 'short',
@@ -214,47 +272,59 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
                                 if (e.key === 'Escape') setEditingId(null)
                               }}
                               autoFocus
+                              aria-label="Edit session title"
                               className="px-2 py-1 bg-white border border-blue-400 rounded text-xs text-slate-900 focus:outline-none w-56 font-sans"
                             />
                             <button
                               type="button"
                               onClick={() => handleSaveRename(session.id)}
-                              className="p-1 text-emerald-600 hover:text-emerald-700"
-                              title="Save Title"
+                              className="p-1 text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                              aria-label="Save session title"
                             >
-                              <span className="material-symbols-outlined text-[16px]">check</span>
+                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">check</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditingId(null)}
-                              className="p-1 text-slate-400 hover:text-slate-600"
-                              title="Cancel"
+                              className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+                              aria-label="Cancel renaming"
                             >
-                              <span className="material-symbols-outlined text-[16px]">close</span>
+                              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
                             </button>
                           </div>
                         ) : (
                           <div className="flex flex-col">
                             <div className="flex items-center gap-1.5 group">
-                              <span
+                              <button
+                                type="button"
                                 onClick={() => loadArchivedSession(session.id)}
-                                className="font-medium text-slate-900 hover:text-primary transition-colors cursor-pointer truncate max-w-sm"
-                                title="Click to open this session"
+                                className="font-medium text-slate-900 hover:text-primary transition-colors cursor-pointer truncate max-w-sm text-left"
                               >
                                 {session.title}
-                              </span>
+                              </button>
                               {isCurrent && (
                                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 text-blue-700 font-mono font-semibold">
                                   CURRENT
                                 </span>
                               )}
+                              {hasSavedAudio && (
+                                <span
+                                  className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/70 font-mono font-medium"
+                                  title="Saved local audio ready for click-to-replay & retranscription"
+                                >
+                                  <span className="material-symbols-outlined text-[11px]" aria-hidden="true">
+                                    volume_up
+                                  </span>
+                                  <span>AUDIO</span>
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleStartRename(session)}
-                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-700 transition p-0.5"
-                                title="Rename title"
+                                className="opacity-0 group-hover:opacity-100 focus:opacity-100 text-slate-400 hover:text-slate-700 transition p-0.5 cursor-pointer"
+                                aria-label={`Rename ${session.title}`}
                               >
-                                <span className="material-symbols-outlined text-[13px]">edit</span>
+                                <span className="material-symbols-outlined text-[13px]" aria-hidden="true">edit</span>
                               </button>
                             </div>
                             <span className="font-mono text-[10px] text-slate-400">
@@ -284,7 +354,7 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
                       <td className="py-3 px-4 text-center">
                         {session.starredCount > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200/60 font-mono">
-                            <span className="material-symbols-outlined text-[12px] text-amber-500">
+                            <span className="material-symbols-outlined text-[12px] text-amber-500" aria-hidden="true">
                               star
                             </span>
                             {session.starredCount}
@@ -301,19 +371,30 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
                             type="button"
                             onClick={() => loadArchivedSession(session.id)}
                             className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] transition cursor-pointer flex items-center gap-1"
-                            title="Open session in transcriber"
+                            aria-label={`Open ${session.title}`}
                           >
-                            <span className="material-symbols-outlined text-[13px]">visibility</span>
+                            <span className="material-symbols-outlined text-[13px]" aria-hidden="true">visibility</span>
                             <span>Open</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleExportSession(session, 'srt')}
+                            className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                            aria-label={`Download SRT subtitles for ${session.title}`}
+                            title="Download Subtitles (.srt)"
+                          >
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">subtitles</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => handleExportSession(session, 'markdown')}
                             className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                            aria-label={`Download Markdown for ${session.title}`}
                             title="Download Markdown (.md)"
                           >
-                            <span className="material-symbols-outlined text-[16px]">file_download</span>
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">file_download</span>
                           </button>
 
                           <button
@@ -321,16 +402,17 @@ export const SessionArchive: React.FC<SessionArchiveProps> = () => {
                             onClick={() => {
                               if (
                                 window.confirm(
-                                  `Delete session "${session.title}" (${session.id}) from archive?`
+                                  `Delete session "${session.title}" (${session.id}) and any saved audio from archive?`
                                 )
                               ) {
                                 deleteArchivedSession(session.id)
                               }
                             }}
                             className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            aria-label={`Delete ${session.title}`}
                             title="Delete this session"
                           >
-                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
                           </button>
                         </div>
                       </td>

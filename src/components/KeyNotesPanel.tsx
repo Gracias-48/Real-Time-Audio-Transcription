@@ -1,17 +1,23 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useAppStore } from '../lib/store'
 import { formatTimestamp } from '../lib/text'
+import { generateExtractiveSummary } from '../lib/summary'
 
 interface KeyNotesPanelProps {
   onOpenExport?: () => void
 }
 
 export const KeyNotesPanel: React.FC<KeyNotesPanelProps> = ({ onOpenExport }) => {
-  const { sentences, removeHighlight, addManualNote } = useAppStore()
+  const { sentences, removeHighlight, addManualNote, settings, filterQuery, setFilterQuery } =
+    useAppStore()
   const [manualNoteText, setManualNoteText] = useState('')
   const [copyFeedback, setCopyFeedback] = useState(false)
 
   const highlights = sentences.filter((s) => s.highlighted)
+  const autoTopics = useMemo(
+    () => generateExtractiveSummary(sentences, 4, settings.glossaryPrompt).topKeywords.slice(0, 6),
+    [sentences, settings.glossaryPrompt]
+  )
 
   const scrollToSentence = (id: string) => {
     const el = document.getElementById(`sentence-${id}`)
@@ -92,6 +98,34 @@ export const KeyNotesPanel: React.FC<KeyNotesPanelProps> = ({ onOpenExport }) =>
           <div className="text-[10px] text-slate-400">Avg Words/Sentence</div>
         </div>
       </div>
+
+      {/* Auto-Detected Bilingual Key Topics (100% On-Device, Zero API Key) */}
+      {autoTopics.length > 0 && (
+        <div className="px-4 py-2 bg-white border-b border-gray-100 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mr-0.5">
+            Topics:
+          </span>
+          {autoTopics.map((topic) => {
+            const active = filterQuery.toLowerCase() === topic.toLowerCase()
+            return (
+              <button
+                key={topic}
+                type="button"
+                onClick={() => setFilterQuery(active ? '' : topic)}
+                aria-pressed={active}
+                className={`px-2 py-0.5 rounded-full text-[10px] font-mono transition cursor-pointer ${
+                  active
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                }`}
+                title={active ? 'Clear topic filter' : `Filter transcript by "${topic}"`}
+              >
+                #{topic}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* Scrollable Highlight List */}
       <div

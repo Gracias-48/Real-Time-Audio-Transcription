@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAppStore } from '../lib/store'
+import { formatBytes, getAudioStorageUsage } from '../lib/audioStore'
 
 interface SidebarProps {
   isOpen: boolean
@@ -15,9 +16,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenSetting
     archivedSessions,
     currentSessionId,
     startNewSession,
+    audioVersion,
   } = useAppStore()
 
+  const [storageBytes, setStorageBytes] = useState(0)
+  const [audioClipsCount, setAudioClipsCount] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    void getAudioStorageUsage().then((stats) => {
+      if (!active) return
+      setStorageBytes(stats.totalBytes)
+      setAudioClipsCount(stats.audioCount)
+    })
+    return () => {
+      active = false
+    }
+  }, [audioVersion, archivedSessions.length, currentSessionId])
+
   const starredCount = sentences.filter((s) => s.highlighted).length
+  const storagePct = Math.min(100, Math.max(4, Math.round((storageBytes / (200 * 1024 * 1024)) * 100)))
 
   const handleNav = (tab: 'transcriber' | 'archive' | 'evaluate') => {
     setCurrentTab(tab)
@@ -171,20 +189,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onOpenSetting
           </button>
         </nav>
 
-        {/* Telemetry Footer */}
+        {/* Telemetry Footer (Real IndexedDB Audio Storage Usage) */}
         <div className="p-4 border-t border-gray-100 text-[11px] text-slate-400 space-y-1.5">
           <div className="flex justify-between items-center text-slate-500 font-mono">
-            <span>Local Buffer</span>
-            <span className="font-mono text-[10px]">18.4 MB / 1GB</span>
+            <span>Local Audio</span>
+            <span className="font-mono text-[10px]">
+              {formatBytes(storageBytes)} ({audioClipsCount})
+            </span>
           </div>
           <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full" style={{ width: '18%' }} />
+            <div
+              className="bg-emerald-500 h-full rounded-full transition-all"
+              style={{ width: `${storageBytes > 0 ? storagePct : 0}%` }}
+            />
           </div>
           <div className="flex items-center justify-between pt-1">
             <span className="text-[10px] text-slate-400 font-mono truncate max-w-[120px]">
               {currentSessionId}
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="SYS_ONLINE" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="100% Local On-Device" />
           </div>
         </div>
       </aside>

@@ -1,5 +1,14 @@
 import { create } from 'zustand'
-import type { Sentence, UtteranceMetric, Settings, AppStatus } from './types'
+import type {
+  Sentence,
+  UtteranceMetric,
+  Settings,
+  AppStatus,
+  SpeakerLabel,
+  ImportJobState,
+} from './types'
+import { replaceTextOccurrences } from './text'
+import { deleteSessionAudio } from './audioStore'
 
 const SETTINGS_STORAGE_KEY = 'lecture_transcriber_settings_v3'
 const ARCHIVE_STORAGE_KEY = 'lecture_transcriber_sessions_archive_v3'
@@ -17,6 +26,7 @@ export interface ArchivedSession {
   durationMs: number
   model: string
   language: string
+  hasAudio?: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -36,6 +46,11 @@ const DEFAULT_SETTINGS: Settings = {
   glossaryPrompt:
     'Transkripsi perkuliahan dalam bahasa Indonesia. Istilah: sistem operasi, jaringan komputer, pembelajaran mesin, kecerdasan buatan, basis data, algoritma, rekayasa perangkat lunak.',
   autoScroll: true,
+  audioSource: 'mic',
+  micDeviceId: '',
+  noiseConditioning: true,
+  saveAudioRecording: true,
+  summaryTemplate: 'executive',
 }
 
 export function generateSessionId(): string {
@@ -56,7 +71,12 @@ export function generateSessionTitle(sentences: Sentence[], timestamp: number): 
   })} · ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
 }
 
+function hasLocalStorage(): boolean {
+  return typeof localStorage !== 'undefined'
+}
+
 function loadPersistedSettings(): Settings {
+  if (!hasLocalStorage()) return DEFAULT_SETTINGS
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
     if (raw) {
@@ -75,6 +95,7 @@ function loadPersistedSettings(): Settings {
 }
 
 function loadPersistedArchive(): ArchivedSession[] {
+  if (!hasLocalStorage()) return []
   try {
     const raw = localStorage.getItem(ARCHIVE_STORAGE_KEY)
     if (raw) {
@@ -90,6 +111,7 @@ function loadPersistedArchive(): ArchivedSession[] {
 }
 
 function saveArchive(archive: ArchivedSession[]): void {
+  if (!hasLocalStorage()) return
   try {
     localStorage.setItem(ARCHIVE_STORAGE_KEY, JSON.stringify(archive))
   } catch (err) {
@@ -108,8 +130,9 @@ function initializeStartupSessions(): {
 } {
   let archive = loadPersistedArchive()
 
-  try {
-    const rawActive = localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY)
+  if (hasLocalStorage()) {
+    try {
+      const rawActive = localStorage.getItem(ACTIVE_SESSION_STORAGE_KEY)
     if (rawActive) {
       const parsed = JSON.parse(rawActive)
       if (parsed && Array.isArray(parsed.sentences) && parsed.sentences.length > 0) {
@@ -140,6 +163,7 @@ function initializeStartupSessions(): {
             durationMs: dur,
             model: parsed.model || 'whisper-tiny',
             language: parsed.language || 'id',
+            hasAudio: Boolean(parsed.hasAudio),
           }
 
           // Avoid duplicate ID in archive
@@ -151,8 +175,9 @@ function initializeStartupSessions(): {
       }
       localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY)
     }
-  } catch (err) {
-    console.warn('Error reading active session on startup:', err)
+    } catch (err) {
+      console.warn('Error reading active session on startup:', err)
+    }
   }
 
   const newId = generateSessionId()
@@ -180,10 +205,15 @@ interface AppState {
   currentSessionTitle: string
   sessionCreatedAt: number
   archivedSessions: ArchivedSession[]
-  startNewSession: () => void
+  hasSessionAudio: boolean
+  audioVersion: number
+  startNewSession: (title?: string) => string
   loadArchivedSession: (id: string) => void
   deleteArchivedSession: (id: string) => void
   renameArchivedSession: (id: string, newTitle: string) => void
+  renameCurrentSession: (newTitle: string) => void
+  setHasSessionAudio: (hasAudio: boolean) => void
+  bumpAudioVersion: () => void
 
   // Engine & Transcriber State
   status: AppStatus
@@ -193,6 +223,9 @@ interface AppState {
   partialText: string
   currentUtteranceStartMs: number
   isSpeaking: boolean
+  audioLevel: number
+  isClipping: boolean
+  importJob: ImportJobState | null
   latencyMs: number
   rtf: number
   metrics: UtteranceMetric[]
@@ -206,15 +239,58 @@ interface AppState {
   setPartialText: (text: string) => void
   setCurrentUtteranceStartMs: (ms: number) => void
   setIsSpeaking: (isSpeaking: boolean) => void
+  setAudioLevel: (level: number, clipping?: boolean) => void
+  setImportJob: (job: ImportJobState | null) => void
   setDownloadProgress: (p: number | null) => void
   setFilterQuery: (query: string) => void
-  addSentence: (text: string, startMs: number) => void
+  addSentence: (text: string, startMs: number, speaker?: SpeakerLabel) => void
+  setSentences: (sentences: Sentence[]) => void
+  editSentence: (id: string, newText: string) => void
+  deleteSentence: (id: string) => void
+  replaceAllInTranscript: (find: string, replaceWith: string, caseSensitive?: boolean) => number
   addManualNote: (text: string) => void
   toggleHighlight: (id: string) => void
   removeHighlight: (id: string) => void
   recordMetric: (metric: UtteranceMetric) => void
   updateSettings: (partial: Partial<Settings>) => void
   resetSession: () => void
+}
+
+function syncArchiveEntry(
+  archive: ArchivedSession[],
+  sessionId: string,
+  title: string,
+  sentences: Sentence[],
+  metrics: UtteranceMetric[],
+  hasAudio?: boolean
+): ArchivedSession[] {
+  if (!archive.some((a) => a.id === sessionId)) return archive
+  const words = sentences.reduce(
+    (acc, s) => acc + s.text.trim().split(/\s+/).filter(Boolean).length,
+    0
+  )
+  const starred = sentences.filter((s) => s.highlighted).length
+  const firstStart = sentences[0]?.startMs || 0
+  const lastStart = sentences[sentences.length - 1]?.startMs || 0
+  const dur = sentences.length > 0 ? Math.max(0, lastStart - firstStart + 3000) : 0
+
+  const updated = archive.map((a) =>
+    a.id === sessionId
+      ? {
+          ...a,
+          title,
+          sentences,
+          metrics,
+          starredCount: starred,
+          totalWords: words,
+          durationMs: dur,
+          updatedAt: Date.now(),
+          hasAudio: hasAudio !== undefined ? hasAudio : a.hasAudio,
+        }
+      : a
+  )
+  saveArchive(updated)
+  return updated
 }
 
 function persistActiveSession(state: AppState): void {
@@ -228,8 +304,9 @@ function persistActiveSession(state: AppState): void {
           createdAt: state.sessionCreatedAt,
           sentences: state.sentences,
           metrics: state.metrics,
-          model: state.settings.browserModel,
+          model: state.settings.engine === 'browser' ? state.settings.browserModel : state.settings.pythonModel,
           language: state.settings.language,
+          hasAudio: state.hasSessionAudio,
         })
       )
     } else {
@@ -258,15 +335,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentSessionTitle: startup.activeTitle,
   sessionCreatedAt: startup.activeCreatedAt,
   archivedSessions: startup.archive,
+  hasSessionAudio: false,
+  audioVersion: 0,
 
-  startNewSession: () => {
+  startNewSession: (customTitle?: string) => {
     const state = get()
     let updatedArchive = state.archivedSessions
 
     // Archive current session if it has content
     if (state.sentences.length > 0) {
       const words = state.sentences.reduce(
-        (acc, s) => acc + s.text.trim().split(/\s+/).length,
+        (acc, s) => acc + s.text.trim().split(/\s+/).filter(Boolean).length,
         0
       )
       const starred = state.sentences.filter((s) => s.highlighted).length
@@ -287,8 +366,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         starredCount: starred,
         totalWords: words,
         durationMs: dur,
-        model: state.settings.browserModel,
+        model: state.settings.engine === 'browser' ? state.settings.browserModel : state.settings.pythonModel,
         language: state.settings.language,
+        hasAudio: state.hasSessionAudio,
       }
 
       // Filter out if duplicate
@@ -302,11 +382,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       archivedSessions: updatedArchive,
       currentSessionId: newId,
-      currentSessionTitle: 'Current Lecture Session',
+      currentSessionTitle: customTitle?.trim() || 'Current Lecture Session',
       sessionCreatedAt: now,
       sentences: [],
       partialText: '',
       currentUtteranceStartMs: 0,
+      hasSessionAudio: false,
+      audioVersion: state.audioVersion + 1,
       metrics: [],
       latencyMs: 0,
       rtf: 0,
@@ -315,10 +397,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     })
 
     localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY)
+    return newId
   },
 
   loadArchivedSession: (id: string) => {
-    const session = get().archivedSessions.find((s) => s.id === id)
+    const state = get()
+    const session = state.archivedSessions.find((s) => s.id === id)
     if (!session) return
 
     set({
@@ -327,6 +411,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       sessionCreatedAt: session.createdAt,
       sentences: session.sentences,
       metrics: session.metrics || [],
+      hasSessionAudio: Boolean(session.hasAudio),
+      audioVersion: state.audioVersion + 1,
       currentTab: 'transcriber',
       partialText: '',
       isSpeaking: false,
@@ -337,6 +423,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updated = get().archivedSessions.filter((s) => s.id !== id)
     saveArchive(updated)
     set({ archivedSessions: updated })
+    void deleteSessionAudio(id)
 
     // If deleting the currently loaded session, reset to clean
     if (get().currentSessionId === id) {
@@ -345,16 +432,57 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   renameArchivedSession: (id: string, newTitle: string) => {
+    const clean = newTitle.trim()
+    if (!clean) return
     const updated = get().archivedSessions.map((s) =>
-      s.id === id ? { ...s, title: newTitle.trim() || s.title } : s
+      s.id === id ? { ...s, title: clean } : s
     )
     saveArchive(updated)
     set({
       archivedSessions: updated,
-      currentSessionTitle:
-        get().currentSessionId === id ? newTitle.trim() : get().currentSessionTitle,
+      currentSessionTitle: get().currentSessionId === id ? clean : get().currentSessionTitle,
     })
   },
+
+  renameCurrentSession: (newTitle: string) => {
+    const clean = newTitle.trim()
+    if (!clean) return
+    set((state) => {
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        clean,
+        state.sentences,
+        state.metrics
+      )
+      const nextState = {
+        ...state,
+        currentSessionTitle: clean,
+        archivedSessions: updatedArchive,
+      }
+      persistActiveSession(nextState as AppState)
+      return {
+        currentSessionTitle: clean,
+        archivedSessions: updatedArchive,
+      }
+    })
+  },
+
+  setHasSessionAudio: (hasAudio: boolean) => {
+    set((state) => {
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        state.sentences,
+        state.metrics,
+        hasAudio
+      )
+      return { hasSessionAudio: hasAudio, archivedSessions: updatedArchive }
+    })
+  },
+
+  bumpAudioVersion: () => set((state) => ({ audioVersion: state.audioVersion + 1 })),
 
   status: 'idle',
   statusMessage: 'Ready — Click Start to transcribe',
@@ -363,6 +491,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   partialText: '',
   currentUtteranceStartMs: 0,
   isSpeaking: false,
+  audioLevel: 0,
+  isClipping: false,
+  importJob: null,
   latencyMs: 0,
   rtf: 0,
   metrics: [],
@@ -375,6 +506,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (status === 'listening') {
       const eng = get().settings.engine === 'browser' ? 'Local Model' : 'Python Server'
       defaultMsg = `Listening - ${eng}`
+    } else if (status === 'paused') {
+      defaultMsg = 'Paused — Click Resume to continue'
+    } else if (status === 'importing') {
+      defaultMsg = 'Transcribing imported audio...'
     } else if (status === 'loading') {
       defaultMsg = 'Loading Model...'
     } else if (status === 'error') {
@@ -387,10 +522,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setPartialText: (text) => set({ partialText: text }),
   setCurrentUtteranceStartMs: (ms) => set({ currentUtteranceStartMs: ms }),
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
+  setAudioLevel: (level, clipping = false) => set({ audioLevel: level, isClipping: clipping }),
+  setImportJob: (job) => set({ importJob: job }),
   setDownloadProgress: (p) => set({ downloadProgress: p }),
   setFilterQuery: (query) => set({ filterQuery: query }),
 
-  addSentence: (text, startMs) => {
+  addSentence: (text, startMs, speaker) => {
     const trimmed = text.trim()
     if (!trimmed) return
 
@@ -400,6 +537,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         startMs,
         text: trimmed,
         highlighted: false,
+        ...(speaker ? { speaker } : {}),
       }
       const updated = [...state.sentences, newSentence]
 
@@ -409,19 +547,107 @@ export const useAppStore = create<AppState>((set, get) => ({
         newTitle = generateSessionTitle(updated, state.sessionCreatedAt)
       }
 
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        newTitle,
+        updated,
+        state.metrics
+      )
+
       const nextState = {
         ...state,
         sentences: updated,
         currentSessionTitle: newTitle,
+        archivedSessions: updatedArchive,
         partialText: '',
       }
       persistActiveSession(nextState as AppState)
       return {
         sentences: updated,
         currentSessionTitle: newTitle,
+        archivedSessions: updatedArchive,
         partialText: '',
       }
     })
+  },
+
+  setSentences: (sentences) => {
+    set((state) => {
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        sentences,
+        state.metrics
+      )
+      const nextState = { ...state, sentences, archivedSessions: updatedArchive }
+      persistActiveSession(nextState as AppState)
+      return { sentences, archivedSessions: updatedArchive }
+    })
+  },
+
+  editSentence: (id, newText) => {
+    const trimmed = newText.trim()
+    if (!trimmed) return
+    set((state) => {
+      const updated = state.sentences.map((s) =>
+        s.id === id ? { ...s, text: trimmed, edited: true } : s
+      )
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        updated,
+        state.metrics
+      )
+      const nextState = { ...state, sentences: updated, archivedSessions: updatedArchive }
+      persistActiveSession(nextState as AppState)
+      return { sentences: updated, archivedSessions: updatedArchive }
+    })
+  },
+
+  deleteSentence: (id) => {
+    set((state) => {
+      const updated = state.sentences.filter((s) => s.id !== id)
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        updated,
+        state.metrics
+      )
+      const nextState = { ...state, sentences: updated, archivedSessions: updatedArchive }
+      persistActiveSession(nextState as AppState)
+      return { sentences: updated, archivedSessions: updatedArchive }
+    })
+  },
+
+  replaceAllInTranscript: (find, replaceWith, caseSensitive = false) => {
+    if (!find) return 0
+    let totalReplacements = 0
+    set((state) => {
+      const updated = state.sentences.map((s) => {
+        const res = replaceTextOccurrences(s.text, find, replaceWith, caseSensitive)
+        if (res.count > 0) {
+          totalReplacements += res.count
+          return { ...s, text: res.text, edited: true }
+        }
+        return s
+      })
+      if (totalReplacements === 0) return state
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        updated,
+        state.metrics
+      )
+      const nextState = { ...state, sentences: updated, archivedSessions: updatedArchive }
+      persistActiveSession(nextState as AppState)
+      return { sentences: updated, archivedSessions: updatedArchive }
+    })
+    return totalReplacements
   },
 
   addManualNote: (text) => {
@@ -429,18 +655,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!trimmed) return
 
     set((state) => {
-      const nowMs = Date.now() - state.sessionCreatedAt
+      const lastStart = state.sentences[state.sentences.length - 1]?.startMs ?? 0
+      const nowMs = state.sentences.length > 0 ? lastStart + 1000 : 0
       const newSentence: Sentence = {
         id: `s-manual-${Date.now()}`,
         startMs: Math.max(0, nowMs),
         text: trimmed,
         highlighted: true,
         highlightedAt: Date.now(),
+        speaker: 'You',
       }
       const updated = [...state.sentences, newSentence]
-      const nextState = { ...state, sentences: updated }
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        updated,
+        state.metrics
+      )
+      const nextState = { ...state, sentences: updated, archivedSessions: updatedArchive }
       persistActiveSession(nextState as AppState)
-      return { sentences: updated }
+      return { sentences: updated, archivedSessions: updatedArchive }
     })
   },
 
@@ -457,9 +692,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
         return s
       })
-      const nextState = { ...state, sentences: updated }
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        updated,
+        state.metrics
+      )
+      const nextState = { ...state, sentences: updated, archivedSessions: updatedArchive }
       persistActiveSession(nextState as AppState)
-      return { sentences: updated }
+      return { sentences: updated, archivedSessions: updatedArchive }
     })
   },
 
@@ -468,9 +710,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       const updated = state.sentences.map((s) =>
         s.id === id ? { ...s, highlighted: false, highlightedAt: undefined } : s
       )
-      const nextState = { ...state, sentences: updated }
+      const updatedArchive = syncArchiveEntry(
+        state.archivedSessions,
+        state.currentSessionId,
+        state.currentSessionTitle,
+        updated,
+        state.metrics
+      )
+      const nextState = { ...state, sentences: updated, archivedSessions: updatedArchive }
       persistActiveSession(nextState as AppState)
-      return { sentences: updated }
+      return { sentences: updated, archivedSessions: updatedArchive }
     })
   },
 
