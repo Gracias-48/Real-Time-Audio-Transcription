@@ -94,6 +94,35 @@ export function computeWer(reference: string, hypothesis: string): WerResult {
   return { wer, S, D, I, C, N: n, ops }
 }
 
+/**
+ * Character Error Rate (CER) = character-level Levenshtein distance / reference char count.
+ * Uses normalized text with spaces preserved.
+ */
+export function computeCer(reference: string, hypothesis: string): number {
+  const r = normalizeForWer(reference)
+  const h = normalizeForWer(hypothesis)
+  const n = r.length
+  const m = h.length
+  if (n === 0) return m === 0 ? 0 : 1
+
+  let prev = new Uint32Array(m + 1)
+  let curr = new Uint32Array(m + 1)
+  for (let j = 0; j <= m; j++) prev[j] = j
+
+  for (let i = 1; i <= n; i++) {
+    curr[0] = i
+    for (let j = 1; j <= m; j++) {
+      const cost = r[i - 1] === h[j - 1] ? 0 : 1
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost)
+    }
+    const tmp = prev
+    prev = curr
+    curr = tmp
+  }
+
+  return prev[m] / n
+}
+
 export interface GlossaryReport {
   term: string
   inReference: boolean

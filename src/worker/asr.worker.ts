@@ -134,13 +134,14 @@ self.onmessage = async (e: MessageEvent) => {
       }
 
       const isEnglishOnly = currentModel.endsWith('.en')
+      // Transformers.js v4 `_call_whisper` spreads top-level kwargs directly into `model.generate()`.
+      // Keep options flat & spec-compliant: greedy decoding (`do_sample: false`), repetition guard, and token cap.
       const genOptions: any = {
         return_timestamps: false,
         chunk_length_s: 30,
-        generate_kwargs: {
-          temperature: 0.0,
-          repetition_penalty: 1.1,
-        },
+        do_sample: false,
+        repetition_penalty: 1.1,
+        max_new_tokens: 128,
       }
 
       if (!isEnglishOnly) {
@@ -151,9 +152,16 @@ self.onmessage = async (e: MessageEvent) => {
         genOptions.task = 'transcribe'
       }
 
-      if (prompt) {
-        genOptions.initial_prompt = prompt
-        genOptions.generate_kwargs.initial_prompt = prompt
+      // Pass Whisper prompt_ids only if the loaded processor explicitly exposes get_prompt_ids
+      if (prompt && typeof transcriber?.processor?.get_prompt_ids === 'function') {
+        try {
+          const promptIds = transcriber.processor.get_prompt_ids(prompt)
+          if (promptIds && promptIds.length > 0) {
+            genOptions.prompt_ids = promptIds
+          }
+        } catch {
+          // Ignore if this checkpoint tokenizer does not support prompt_ids
+        }
       }
 
       const t0 = performance.now()

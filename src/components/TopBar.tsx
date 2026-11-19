@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAppStore } from '../lib/store'
 
 interface TopBarProps {
@@ -7,79 +7,138 @@ interface TopBarProps {
   onToggleSidebar?: () => void
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenExport, onToggleSidebar }) => {
+export const TopBar: React.FC<TopBarProps> = ({
+  onOpenSettings,
+  onOpenExport,
+  onToggleSidebar,
+}) => {
   const {
     currentTab,
-    setCurrentTab,
+    currentSessionTitle,
+    renameCurrentSession,
     latencyMs,
     rtf,
+    status,
     settings,
     updateSettings,
-    startNewSession,
-    archivedSessions,
   } = useAppStore()
 
-  const latencySec = (latencyMs / 1000).toFixed(2) + 's'
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState('')
 
-  const breadcrumbLabel =
-    currentTab === 'transcriber'
-      ? 'Live Transcriber'
-      : currentTab === 'archive'
-      ? 'Session Archive'
-      : 'Evaluation Suite'
+  const startTitleEdit = () => {
+    setTitleDraft(currentSessionTitle)
+    setIsEditingTitle(true)
+  }
+
+  const commitTitleEdit = () => {
+    if (titleDraft.trim()) {
+      renameCurrentSession(titleDraft.trim())
+    }
+    setIsEditingTitle(false)
+  }
+
+  const activeModelLabel =
+    settings.engine === 'browser'
+      ? `Whisper ${settings.browserModel.toUpperCase()} · Browser`
+      : `Whisper ${settings.pythonModel.toUpperCase()} · Python`
+
+  const latencyDisplay = latencyMs > 0 ? `${(latencyMs / 1000).toFixed(2)}s` : '—'
+  const rtfDisplay = rtf > 0 ? `${rtf.toFixed(2)}x` : '—'
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-white/90 backdrop-blur-md border-b border-gray-200/70 z-40 flex items-center justify-between px-4 sm:px-6">
-      {/* Brand & Breadcrumbs */}
-      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-        {/* Mobile menu trigger */}
+    <header className="h-14 shrink-0 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 z-20">
+      {/* Left: Mobile Sidebar Toggle + Contextual Document Title */}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
             type="button"
-            className="p-1 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition lg:hidden shrink-0 cursor-pointer"
-            title="Toggle Menu"
+            aria-label="Open navigation menu"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition lg:hidden shrink-0 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]">menu</span>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              menu
+            </span>
           </button>
         )}
 
-        {/* Logo & Brand Name */}
-        <button
-          type="button"
-          onClick={() => setCurrentTab('transcriber')}
-          className="flex items-center gap-2 group cursor-pointer text-left shrink-0"
-        >
-          <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center transition-transform group-hover:scale-95 shadow-2xs">
-            <span className="material-symbols-outlined text-[16px]">graphic_eq</span>
+        {currentTab === 'transcriber' ? (
+          <div className="flex items-center gap-2.5 min-w-0">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={titleDraft}
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onBlur={commitTitleEdit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitTitleEdit()
+                  if (e.key === 'Escape') setIsEditingTitle(false)
+                }}
+                autoFocus
+                aria-label="Lecture session title"
+                className="text-sm font-semibold text-slate-900 bg-slate-50 border border-blue-400 rounded-md px-2.5 py-1 focus:outline-none w-52 sm:w-72"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={startTitleEdit}
+                title="Click to rename this lecture session"
+                className="group flex items-center gap-1.5 text-left min-w-0 cursor-pointer rounded-md px-1.5 py-1 -ml-1.5 hover:bg-slate-100/80 transition"
+              >
+                <h1 className="text-[14px] font-semibold tracking-tight text-slate-900 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
+                  {currentSessionTitle}
+                </h1>
+                <span
+                  className="material-symbols-outlined text-[14px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  aria-hidden="true"
+                >
+                  edit
+                </span>
+              </button>
+            )}
+
+            {/* Engine Status Pill (opens Settings on click) */}
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/80 hover:bg-slate-200/70 text-[11px] font-medium text-slate-600 transition cursor-pointer shrink-0"
+              title="Configure Whisper model & audio device"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  status === 'listening'
+                    ? 'bg-emerald-500 animate-pulse'
+                    : status === 'paused'
+                    ? 'bg-amber-500'
+                    : status === 'error'
+                    ? 'bg-rose-500'
+                    : 'bg-slate-400'
+                }`}
+              />
+              <span>{activeModelLabel}</span>
+            </button>
           </div>
-          <span className="text-[13px] font-semibold tracking-tight text-slate-900 hidden sm:inline">
-            TranscribeNote
-          </span>
-        </button>
-
-        <span className="text-gray-300 text-xs select-none">/</span>
-        <span className="text-xs text-slate-600 font-medium truncate">{breadcrumbLabel}</span>
-
-        {/* Engine status beacon */}
-        <div className="hidden md:flex items-center gap-1.5 ml-2 pl-3 border-l border-gray-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] text-slate-500 font-normal">
-            {settings.engine === 'browser'
-              ? `Whisper ${settings.browserModel.toUpperCase()} (WebGPU/WASM)`
-              : `Python Whisper ${settings.pythonModel.toUpperCase()} (Local)`}
-          </span>
-        </div>
+        ) : (
+          <h1 className="text-[14px] font-semibold tracking-tight text-slate-900 truncate">
+            {currentTab === 'archive' ? 'Session Archive & History' : 'ASR Evaluation & Benchmarks'}
+          </h1>
+        )}
       </div>
 
-      {/* Right Controls */}
-      <div className="flex items-center gap-2 sm:gap-2.5">
-        {/* Minimal Language Switch */}
-        <div className="flex items-center p-0.5 rounded-md bg-slate-100/70 text-[11px] font-medium text-slate-500">
+      {/* Right: Focused Utility Controls (Zero Duplicate Navigation Buttons) */}
+      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        {/* Language Segmented Pill */}
+        <div
+          className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/70 text-[11px] font-medium"
+          role="group"
+          aria-label="Transcription language"
+        >
           <button
             type="button"
+            aria-pressed={settings.language === 'id'}
             onClick={() => updateSettings({ language: 'id' })}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2 py-1 rounded-md transition cursor-pointer ${
               settings.language === 'id'
                 ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                 : 'text-slate-500 hover:text-slate-800'
@@ -89,8 +148,9 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenExport, on
           </button>
           <button
             type="button"
+            aria-pressed={settings.language === 'en'}
             onClick={() => updateSettings({ language: 'en' })}
-            className={`px-2 py-0.5 rounded transition cursor-pointer ${
+            className={`px-2 py-1 rounded-md transition cursor-pointer ${
               settings.language === 'en'
                 ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                 : 'text-slate-500 hover:text-slate-800'
@@ -100,90 +160,31 @@ export const TopBar: React.FC<TopBarProps> = ({ onOpenSettings, onOpenExport, on
           </button>
         </div>
 
-        {/* Telemetry Pills (Latency & RTF) */}
-        <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-50 border border-gray-200/60 font-mono text-[11px] text-slate-600">
-          <span>Lat: <strong className="text-slate-900">{latencySec}</strong></span>
-          <span className="text-gray-300">|</span>
-          <span>RTF: <strong className="text-slate-900">{rtf > 0 ? `${rtf}x` : '0.38x'}</strong></span>
+        {/* Honest Live Telemetry Pill */}
+        <div
+          className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/70 font-mono text-[11px] text-slate-500 tabular-nums"
+          title="Rolling real-time latency and Real-Time Factor (RTF < 1.0x is faster than real-time)"
+        >
+          <span>
+            Lat <strong className="text-slate-800 font-semibold">{latencyDisplay}</strong>
+          </span>
+          <span className="text-slate-300">|</span>
+          <span>
+            RTF <strong className="text-slate-800 font-semibold">{rtfDisplay}</strong>
+          </span>
         </div>
 
-        {/* + New Session Button */}
-        <button
-          type="button"
-          onClick={() => {
-            startNewSession()
-            setCurrentTab('transcriber')
-          }}
-          className="hidden sm:inline-flex h-8 px-2.5 items-center gap-1.5 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition shadow-2xs cursor-pointer"
-          title="Start fresh lecture session"
-        >
-          <span className="material-symbols-outlined text-[15px] text-slate-500">add</span>
-          <span>New Session</span>
-        </button>
-
-        {/* Navigation Switchers (NO NEW TABS) */}
-        {currentTab === 'evaluate' ? (
-          <button
-            type="button"
-            onClick={() => setCurrentTab('transcriber')}
-            className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md bg-primary-container text-white text-[12px] font-medium hover:bg-primary-hover transition shadow-2xs cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[15px]">arrow_back</span>
-            <span className="hidden sm:inline">Transcriber</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setCurrentTab('evaluate')}
-            className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-600 hover:text-slate-900 hover:border-gray-300 transition shadow-2xs cursor-pointer"
-            title="Scientific ASR Benchmark Suite"
-          >
-            <span className="material-symbols-outlined text-[15px] text-slate-400">query_stats</span>
-            <span className="hidden lg:inline">/evaluate</span>
-          </button>
-        )}
-
-        {/* History Archive Link */}
-        <button
-          type="button"
-          onClick={() => setCurrentTab('archive')}
-          className={`h-8 px-2.5 inline-flex items-center gap-1 rounded-md border text-[12px] font-medium transition shadow-2xs cursor-pointer ${
-            currentTab === 'archive'
-              ? 'border-blue-400 bg-blue-50 text-blue-700'
-              : 'border-gray-200/80 bg-white text-slate-600 hover:text-slate-900 hover:border-gray-300'
-          }`}
-          title="View Session Archive & History"
-        >
-          <span className="material-symbols-outlined text-[15px] text-slate-400">folder_open</span>
-          <span className="hidden xl:inline">Archive</span>
-          {archivedSessions.length > 0 && (
-            <span className="text-[10px] font-mono px-1 rounded-full bg-slate-100 text-slate-600">
-              {archivedSessions.length}
-            </span>
-          )}
-        </button>
-
-        {/* Acoustic Settings Trigger */}
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-gray-200/80 bg-white text-[12px] font-medium text-slate-600 hover:text-slate-900 hover:border-gray-300 transition shadow-2xs cursor-pointer"
-          title="Acoustic Settings"
-        >
-          <span className="material-symbols-outlined text-[15px] text-slate-400">tune</span>
-          <span className="hidden sm:inline">Settings</span>
-        </button>
-
-        {/* Export Notes Trigger */}
-        {onOpenExport && (
+        {/* Single Clean Export CTA */}
+        {onOpenExport && currentTab === 'transcriber' && (
           <button
             type="button"
             onClick={onOpenExport}
-            className="h-8 px-3 inline-flex items-center gap-1 rounded-md bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition shadow-2xs cursor-pointer"
-            title="Export Notes (Markdown, JSON, Local AI Summary)"
+            className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition shadow-xs cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[15px]">file_download</span>
-            <span className="hidden sm:inline">Export</span>
+            <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
+              ios_share
+            </span>
+            <span>Export</span>
           </button>
         )}
       </div>

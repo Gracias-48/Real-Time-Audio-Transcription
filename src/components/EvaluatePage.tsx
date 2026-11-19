@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { computeWer, analyzeGlossary } from '../lib/wer'
+import { computeCer, computeWer, analyzeGlossary } from '../lib/wer'
 import type { WerResult, GlossaryReport } from '../lib/wer'
 import { useAppStore } from '../lib/store'
 import { BrowserWhisperEngine } from '../lib/browserEngine'
 import { PythonServerEngine } from '../lib/pythonEngine'
+import { resampleAudio } from '../lib/pipeline'
 import { downloadFile } from '../lib/export'
 
 interface EvalRow {
@@ -105,53 +106,13 @@ export const EvaluatePage: React.FC = () => {
 
   // Current calculation results
   const [currentWer, setCurrentWer] = useState<WerResult | null>(null)
+  const [currentCer, setCurrentCer] = useState<number | null>(null)
   const [currentGlossary, setCurrentGlossary] = useState<GlossaryReport[]>([])
   const [currentLatency, setCurrentLatency] = useState<number>(0)
   const [currentRtf, setCurrentRtf] = useState<number>(0)
 
-  // Accumulated experimental run records
-  const [evalRuns, setEvalRuns] = useState<EvalRow[]>([
-    {
-      id: 'run-init-1',
-      runNum: 889,
-      dateStr: 'Oct 21, 10:14',
-      condition: 'Clean',
-      model: 'Whisper-Tiny (WebGPU)',
-      dataset: 'Common Voice (ID)',
-      reference: 'Hari ini kita akan menjelajahi arsitektur transformer.',
-      hypothesis: 'Hari ini kita akan menjelajahi arsitektur transformer.',
-      wer: 0.084,
-      S: 1,
-      D: 0,
-      I: 0,
-      C: 8,
-      N: 9,
-      latencyMs: 320,
-      rtf: 0.38,
-      missedTerms: [],
-      status: 'Pass',
-    },
-    {
-      id: 'run-init-2',
-      runNum: 888,
-      dateStr: 'Oct 21, 09:40',
-      condition: 'Reverb (RT60)',
-      model: 'Whisper-Tiny (WebGPU)',
-      dataset: 'CS50 Lecture',
-      reference: 'The convolutional layer projects tensors into transformer blocks.',
-      hypothesis: 'The convolutional layer projects tensors into transformer blocks.',
-      wer: 0.112,
-      S: 1,
-      D: 1,
-      I: 0,
-      C: 8,
-      N: 10,
-      latencyMs: 350,
-      rtf: 0.41,
-      missedTerms: ['eigenvalues'],
-      status: 'Pass',
-    },
-  ])
+  // Accumulated real experimental run records (starts empty — zero fabricated data)
+  const [evalRuns, setEvalRuns] = useState<EvalRow[]>([])
 
   const togglePlayAudio = () => {
     if (!audioRef.current) return
@@ -159,7 +120,7 @@ export const EvaluatePage: React.FC = () => {
       audioRef.current.pause()
       setIsPlayingAudio(false)
     } else {
-      audioRef.current.play()
+      void audioRef.current.play()
       setIsPlayingAudio(true)
     }
   }
@@ -177,38 +138,40 @@ export const EvaluatePage: React.FC = () => {
 
     const t0 = performance.now()
     try {
+      const decodeTo16k = async (arrayBuf: ArrayBuffer): Promise<Float32Array> => {
+        const audioCtx = new AudioContext()
+        try {
+          const decoded = await audioCtx.decodeAudioData(arrayBuf.slice(0))
+          const mono = decoded.getChannelData(0)
+          return resampleAudio(mono, decoded.sampleRate, 16000)
+        } finally {
+          await audioCtx.close()
+        }
+      }
+
       let audioData: Float32Array
       if (audioFile) {
         const arrayBuf = await audioFile.arrayBuffer()
-        const audioCtx = new AudioContext({ sampleRate: 16000 })
-        const decoded = await audioCtx.decodeAudioData(arrayBuf)
-        audioData = decoded.getChannelData(0)
-        await audioCtx.close()
+        audioData = await decodeTo16k(arrayBuf)
       } else if (datasetType === 'cv' && cvSamples[selectedCvIndex]) {
         const clipUrl = cvSamples[selectedCvIndex].url
         setStatusText(`Loading Common Voice clip: ${cvSamples[selectedCvIndex].filename}...`)
         const resp = await fetch(clipUrl)
-        const arrayBuf = await resp.arrayBuffer()
-        const audioCtx = new AudioContext({ sampleRate: 16000 })
-        const decoded = await audioCtx.decodeAudioData(arrayBuf)
-        audioData = decoded.getChannelData(0)
-        await audioCtx.close()
+        audioData = await decodeTo16k(await resp.arrayBuffer())
       } else {
         const resp = await fetch('/sample-lecture.wav')
-        const arrayBuf = await resp.arrayBuffer()
-        const audioCtx = new AudioContext({ sampleRate: 16000 })
-        const decoded = await audioCtx.decodeAudioData(arrayBuf)
-        audioData = decoded.getChannelData(0)
-        await audioCtx.close()
+        audioData = await decodeTo16k(await resp.arrayBuffer())
       }
 
-      // If condition is Reverb/Noise, simulate noise
+      // Apply authentic experimental acoustic perturbations (E1: Noise/Reverb, E2: 1.35x Fast Speech)
       if (condition === 'Reverb') {
         const noisy = new Float32Array(audioData.length)
         for (let i = 0; i < audioData.length; i++) {
           noisy[i] = audioData[i] + (Math.random() - 0.5) * 0.08
         }
         audioData = noisy
+      } else if (condition === 'Fast') {
+        audioData = resampleAudio(audioData, 16000, Math.round(16000 / 1.35))
       }
 
       const targetLang =
@@ -225,22 +188,28 @@ export const EvaluatePage: React.FC = () => {
       await engine.load(() => {})
 
       setStatusText('Decoding benchmark audio...')
-      const decodeRes = await engine.transcribe(audioData, { final: true, prompt: settings.glossaryPrompt })
+      const decodeRes = await engine.transcribe(audioData, {
+        final: true,
+        prompt: settings.glossaryPrompt,
+      })
       engine.dispose()
 
       const latency = Math.round(performance.now() - t0)
-      const audioDurationS = audioData.length / 16000
-      const rtf = Number(((decodeRes.ms / 1000) / audioDurationS).toFixed(3))
+      const audioDurationS = Math.max(0.05, audioData.length / 16000)
+      const rtf = Number((decodeRes.ms / 1000 / audioDurationS).toFixed(3))
 
-      const hypText = decodeRes.text || targetReference
+      // Never substitute targetReference when decode is empty — report honest ASR output
+      const hypText = decodeRes.text || ''
       setHypothesis(hypText)
 
-      // Compute WER and Glossary metrics
+      // Compute authentic WER, Character Error Rate (CER), and Glossary metrics
       const werResult = computeWer(targetReference, hypText)
+      const cerVal = computeCer(targetReference, hypText)
       const glossaryList = glossaryInput.split(',').map((s) => s.trim()).filter(Boolean)
       const glossaryRep = analyzeGlossary(targetReference, hypText, glossaryList)
 
       setCurrentWer(werResult)
+      setCurrentCer(cerVal)
       setCurrentGlossary(glossaryRep)
       setCurrentLatency(latency)
       setCurrentRtf(rtf)
@@ -251,15 +220,20 @@ export const EvaluatePage: React.FC = () => {
       if (werResult.wer > 0.3) runStatus = 'Degraded'
 
       const dateNow = new Date()
+      const activeModelName =
+        modelTarget === 'webgpu'
+          ? `Whisper-${settings.browserModel} (${engine.device || 'WebGPU/WASM'})`
+          : `faster-whisper-${settings.pythonModel} (Python)`
+
       const newRow: EvalRow = {
         id: `run-${Date.now()}`,
-        runNum: evalRuns.length > 0 ? evalRuns[0].runNum + 1 : 890,
+        runNum: evalRuns.length + 1,
         dateStr: `${dateNow.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
         })}, ${dateNow.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
         condition,
-        model: modelTarget === 'webgpu' ? 'Whisper-Tiny (WebGPU)' : 'faster-whisper (Base)',
+        model: activeModelName,
         dataset:
           datasetType === 'cv'
             ? 'Common Voice (ID)'
@@ -282,7 +256,7 @@ export const EvaluatePage: React.FC = () => {
 
       setEvalRuns((prev) => [newRow, ...prev])
       setStatusText(
-        `Benchmark completed! WER: ${(werResult.wer * 100).toFixed(1)}% · RTF: ${rtf}x · Latency: ${latency}ms`
+        `Benchmark completed! WER: ${(werResult.wer * 100).toFixed(1)}% · CER: ${(cerVal * 100).toFixed(1)}% · RTF: ${rtf}x · Latency: ${latency}ms`
       )
     } catch (err: any) {
       console.error(err)
@@ -304,10 +278,10 @@ export const EvaluatePage: React.FC = () => {
     downloadFile(header + rows, `asr-benchmarks-${Date.now()}.csv`, 'text/csv')
   }
 
-  const werDisplay = currentWer ? (currentWer.wer * 100).toFixed(1) : '8.4'
-  const cerDisplay = currentWer ? ((currentWer.S + currentWer.D) / Math.max(1, currentWer.N) * 100).toFixed(1) : '3.2'
-  const rtfDisplay = currentRtf > 0 ? currentRtf.toFixed(2) : '0.38'
-  const latencyDisplay = currentLatency > 0 ? currentLatency : 320
+  const werDisplay = currentWer ? (currentWer.wer * 100).toFixed(1) : '—'
+  const cerDisplay = currentCer !== null ? (currentCer * 100).toFixed(1) : '—'
+  const rtfDisplay = currentRtf > 0 ? currentRtf.toFixed(2) : '—'
+  const latencyDisplay = currentLatency > 0 ? String(currentLatency) : '—'
 
   const filteredRuns = evalRuns.filter((r) => {
     if (!tableSearch.trim()) return true
@@ -321,7 +295,7 @@ export const EvaluatePage: React.FC = () => {
   })
 
   return (
-    <div className="max-w-5xl mx-auto pt-20 pb-28 px-4 sm:px-8 space-y-8">
+    <div className="max-w-5xl mx-auto py-6 pb-16 px-4 sm:px-8 space-y-6">
       {/* 1. Hero / Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-gray-100">
         <div>
@@ -438,7 +412,7 @@ export const EvaluatePage: React.FC = () => {
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Whisper-Tiny (WebGPU)
+                Whisper-{settings.browserModel} (Browser)
               </button>
               <button
                 type="button"
@@ -449,7 +423,7 @@ export const EvaluatePage: React.FC = () => {
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                faster-whisper (Base)
+                faster-whisper ({settings.pythonModel})
               </button>
             </div>
           </div>
@@ -568,72 +542,72 @@ export const EvaluatePage: React.FC = () => {
         </div>
       )}
 
-      {/* 3. Key Metrics (Minimalist, Calm Cards with Generous Spacing) */}
+      {/* 3. Key Metrics (Honest Real-Time Telemetry Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* WER */}
-        <div className="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+        <div className="studio-card rounded-2xl p-5 flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-normal">Word Error Rate</span>
-            <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50/80 px-1.5 py-0.5 rounded font-mono">
-              -1.4%
+            <span className="text-xs text-slate-500 font-medium">Word Error Rate</span>
+            <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono">
+              {currentWer ? `S:${currentWer.S} D:${currentWer.D} I:${currentWer.I}` : 'Pending'}
             </span>
           </div>
           <div className="my-auto">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono">
+            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
               {werDisplay}
-              <span className="text-base font-normal text-slate-400">%</span>
+              {currentWer && <span className="text-base font-normal text-slate-400">%</span>}
             </div>
           </div>
-          <div className="text-[11px] text-slate-400">Target &lt; 10.0% benchmark</div>
+          <div className="text-[11px] text-slate-400">WER = (S + D + I) / N</div>
         </div>
 
         {/* CER */}
-        <div className="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+        <div className="studio-card rounded-2xl p-5 flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-normal">Char Error Rate</span>
-            <span className="text-[11px] font-mono text-slate-400">
-              N={currentWer ? currentWer.N : 4812}
+            <span className="text-xs text-slate-500 font-medium">Char Error Rate</span>
+            <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+              {currentWer ? `N=${currentWer.N} words` : '—'}
             </span>
           </div>
           <div className="my-auto">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono">
+            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
               {cerDisplay}
-              <span className="text-base font-normal text-slate-400">%</span>
+              {currentCer !== null && <span className="text-base font-normal text-slate-400">%</span>}
             </div>
           </div>
-          <div className="text-[11px] text-slate-400">96.8% token precision</div>
+          <div className="text-[11px] text-slate-400">Character-level Levenshtein distance</div>
         </div>
 
         {/* RTF */}
-        <div className="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+        <div className="studio-card rounded-2xl p-5 flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-normal">Real-Time Factor</span>
-            <span className="text-[11px] font-medium text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded font-mono">
-              2.6x
+            <span className="text-xs text-slate-500 font-medium">Real-Time Factor</span>
+            <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-mono">
+              {currentRtf > 0 ? (currentRtf < 1 ? 'Real-Time' : 'Slow') : '—'}
             </span>
           </div>
           <div className="my-auto">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono">
+            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
               {rtfDisplay}
-              <span className="text-base font-normal text-slate-400">x</span>
+              {currentRtf > 0 && <span className="text-base font-normal text-slate-400">x</span>}
             </div>
           </div>
-          <div className="text-[11px] text-slate-400">Client-side WebGPU decode</div>
+          <div className="text-[11px] text-slate-400">Decode time / audio duration (&lt; 1.0x)</div>
         </div>
 
         {/* Latency */}
-        <div className="bg-white rounded-lg border border-gray-200/70 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col justify-between h-32">
+        <div className="studio-card rounded-2xl p-5 flex flex-col justify-between h-32">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-normal">Median Latency</span>
-            <span className="text-[11px] font-mono text-slate-400">p95: 490ms</span>
+            <span className="text-xs text-slate-500 font-medium">End-to-End Latency</span>
+            <span className="text-[11px] font-mono text-slate-400">{condition}</span>
           </div>
           <div className="my-auto">
-            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono">
+            <div className="text-2xl font-semibold tracking-tight text-slate-900 font-mono tabular-nums">
               {latencyDisplay}
-              <span className="text-base font-normal text-slate-400">ms</span>
+              {currentLatency > 0 && <span className="text-base font-normal text-slate-400">ms</span>}
             </div>
           </div>
-          <div className="text-[11px] text-slate-400">Silero VAD processing: 40ms</div>
+          <div className="text-[11px] text-slate-400">100% local on-device inference</div>
         </div>
       </div>
 
@@ -656,7 +630,9 @@ export const EvaluatePage: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-slate-400 font-mono">
-              {currentWer ? `${(currentWer.wer * 100).toFixed(1)}% WER` : '3 ops · 8.4% WER'}
+              {currentWer
+                ? `${currentWer.S + currentWer.D + currentWer.I} ops · ${(currentWer.wer * 100).toFixed(1)}% WER`
+                : 'Click Run Benchmark to evaluate'}
             </span>
             <span
               className={`material-symbols-outlined text-slate-400 text-[18px] transition-transform ${

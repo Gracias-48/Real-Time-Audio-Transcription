@@ -381,16 +381,37 @@ export class TranscriptionPipeline {
 
     const dest = ctx.createMediaStreamDestination()
     masterAnalyser.connect(dest)
+    // Keep Chromium's Web Audio render clock actively pumping even without speakers output
+    const silentSink = ctx.createGain()
+    silentSink.gain.value = 0
+    masterAnalyser.connect(silentSink)
+    silentSink.connect(ctx.destination)
     this.processedStream = dest.stream
 
-    // Live RMS audio level & dual-channel speaker energy sampler (~15 FPS)
+    // Live RMS audio level, muted-mic detection & dual-channel speaker energy sampler (~15 FPS)
+    let silentTicks = 0
+    useAppStore.getState().setMicSilentWarning(false)
     this.meterInterval = setInterval(() => {
       if (!this.isRunning || this.isPaused || !this.masterAnalyser) return
       const { rms, peak } = this.sampleRms(this.masterAnalyser)
       // Convert RMS to human-perceptible 0..100 scale
       const db = rms > 0.0001 ? 20 * Math.log10(rms) : -80
       const normalized = Math.max(0, Math.min(100, Math.round(((db + 55) / 55) * 100)))
-      useAppStore.getState().setAudioLevel(normalized, peak >= 0.96)
+      const store = useAppStore.getState()
+      store.setAudioLevel(normalized, peak >= 0.96)
+
+      // Warn user if 0 audio signal arrives for ~4s (e.g., hardware mic mute switch is on)
+      if (rms < 0.0004) {
+        silentTicks += 1
+        if (silentTicks === 62 && !store.micSilentWarning) {
+          store.setMicSilentWarning(true)
+        }
+      } else {
+        silentTicks = 0
+        if (store.micSilentWarning) {
+          store.setMicSilentWarning(false)
+        }
+      }
 
       if (this.isSpeaking && this.micAnalyser && this.systemAnalyser) {
         this.uttMicEnergySum += this.sampleRms(this.micAnalyser).rms
@@ -491,7 +512,9 @@ export class TranscriptionPipeline {
       void this.captureCtx.close().catch(() => {})
       this.captureCtx = null
     }
-    useAppStore.getState().setAudioLevel(0, false)
+    const store = useAppStore.getState()
+    store.setAudioLevel(0, false)
+    store.setMicSilentWarning(false)
   }
 
   private resolveCurrentSpeaker(settings: Settings): SpeakerLabel | undefined {
@@ -967,6 +990,23 @@ export class TranscriptionPipeline {
       store.setStatus('error', `Audio Import Error: ${err?.message || err}`)
       throw err
     }
+  }
+
+  /**
+   * Demo Mode: loads the bundled sample lecture audio clip and transcribes it
+   * through the exact same local Whisper pipeline (works with zero microphone).
+   */
+  async playSampleLecture(settings: Settings): Promise<void> {
+    if (this.isRunning) {
+      await this.stop()
+    }
+    const resp = await fetch('/sample-lecture.wav')
+    if (!resp.ok) {
+      throw new Error('Could not load bundled sample lecture clip (/sample-lecture.wav).')
+    }
+    const blob = await resp.blob()
+    const sampleFile = new File([blob], 'Sample Lecture Demo.wav', { type: 'audio/wav' })
+    await this.importAudioFile(sampleFile, settings)
   }
 
   /**

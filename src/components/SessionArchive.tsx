@@ -88,9 +88,9 @@ export const SessionArchive: React.FC<SessionArchiveProps> = ({ onImportAudio })
   }
 
   return (
-    <div className="max-w-5xl mx-auto pt-20 pb-28 px-4 sm:px-8 space-y-8">
+    <div className="max-w-5xl mx-auto py-6 pb-16 px-4 sm:px-8 space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-gray-200/70">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px] text-primary">folder_open</span>

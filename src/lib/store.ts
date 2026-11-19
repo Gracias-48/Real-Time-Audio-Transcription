@@ -225,6 +225,7 @@ interface AppState {
   isSpeaking: boolean
   audioLevel: number
   isClipping: boolean
+  micSilentWarning: boolean
   importJob: ImportJobState | null
   latencyMs: number
   rtf: number
@@ -240,6 +241,7 @@ interface AppState {
   setCurrentUtteranceStartMs: (ms: number) => void
   setIsSpeaking: (isSpeaking: boolean) => void
   setAudioLevel: (level: number, clipping?: boolean) => void
+  setMicSilentWarning: (silent: boolean) => void
   setImportJob: (job: ImportJobState | null) => void
   setDownloadProgress: (p: number | null) => void
   setFilterQuery: (query: string) => void
@@ -493,6 +495,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isSpeaking: false,
   audioLevel: 0,
   isClipping: false,
+  micSilentWarning: false,
   importJob: null,
   latencyMs: 0,
   rtf: 0,
@@ -523,6 +526,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCurrentUtteranceStartMs: (ms) => set({ currentUtteranceStartMs: ms }),
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   setAudioLevel: (level, clipping = false) => set({ audioLevel: level, isClipping: clipping }),
+  setMicSilentWarning: (silent) => set({ micSilentWarning: silent }),
   setImportJob: (job) => set({ importJob: job }),
   setDownloadProgress: (p) => set({ downloadProgress: p }),
   setFilterQuery: (query) => set({ filterQuery: query }),

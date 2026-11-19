@@ -1,18 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../lib/store'
 import { formatTimestamp } from '../lib/text'
-import { getSessionAudio } from '../lib/audioStore'
+import { deleteSessionAudio, getSessionAudio } from '../lib/audioStore'
 
 interface TranscriptPanelProps {
+  onStart?: () => void
   onImportAudio?: (file: File) => void
+  onPlaySample?: () => void
   onRetranscribe?: () => void
+  onOpenSettings?: () => void
 }
 
 const PLAYBACK_RATES = [1, 1.25, 1.5, 2]
 
 export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
+  onStart,
   onImportAudio,
+  onPlaySample,
   onRetranscribe,
+  onOpenSettings,
 }) => {
   const {
     sentences,
@@ -25,12 +31,14 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     partialText,
     isSpeaking,
     status,
+    micSilentWarning,
     currentUtteranceStartMs,
     filterQuery,
     setFilterQuery,
-    currentSessionTitle,
     currentSessionId,
     audioVersion,
+    bumpAudioVersion,
+    setHasSessionAudio,
     importJob,
   } = useAppStore()
 
@@ -60,7 +68,8 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
   const [playbackRateIdx, setPlaybackRateIdx] = useState(0)
 
   const isListening = status === 'listening'
-  const isBusy = status === 'listening' || status === 'paused' || status === 'importing' || status === 'loading'
+  const isBusy =
+    status === 'listening' || status === 'paused' || status === 'importing' || status === 'loading'
 
   // Load saved IndexedDB audio for current session
   useEffect(() => {
@@ -136,7 +145,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     if (!findTerm) return
     const count = replaceAllInTranscript(findTerm, replaceTerm, caseSensitive)
     setReplaceFeedback(
-      count > 0 ? `Replaced ${count} occurrence${count === 1 ? '' : 's'}` : 'No matches found'
+      count > 0 ? `Replaced ${count} match${count === 1 ? '' : 'es'}` : 'No matches found'
     )
     setTimeout(() => setReplaceFeedback(null), 3000)
   }
@@ -171,6 +180,15 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
     }
   }
 
+  const handleDiscardSavedAudio = async () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+    }
+    await deleteSessionAudio(currentSessionId)
+    setHasSessionAudio(false)
+    bumpAudioVersion()
+  }
+
   // Drag & Drop handlers for importing audio files
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -201,7 +219,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
       ? (sentences[sentences.length - 1]?.startMs || 0) + 3000
       : 0
 
-  // Determine currently playing sentence index for audio sync highlight
+  // Determine currently playing sentence for audio sync highlight
   const playbackMs = playbackTimeS * 1000
   let activePlayingId: string | null = null
   if (isPlaying && sentences.length > 0) {
@@ -221,7 +239,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="flex flex-col h-full bg-white rounded-lg border border-gray-200/70 shadow-[0_1px_2px_rgba(0,0,0,0.02)] overflow-hidden relative"
+      className="studio-card flex flex-col h-full rounded-2xl overflow-hidden relative"
     >
       {/* Hidden audio element backed by IndexedDB Blob URL */}
       {audioUrl && (
@@ -243,10 +261,12 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
 
       {/* Drag & Drop Audio Import Overlay */}
       {isDraggingFile && (
-        <div className="absolute inset-0 z-20 bg-blue-50/90 backdrop-blur-xs border-2 border-dashed border-blue-500 rounded-lg flex flex-col items-center justify-center text-center p-6 pointer-events-none">
-          <span className="material-symbols-outlined text-[36px] text-blue-600 mb-2">
-            audio_file
-          </span>
+        <div className="absolute inset-0 z-20 bg-blue-50/95 backdrop-blur-xs border-2 border-dashed border-blue-500 rounded-2xl flex flex-col items-center justify-center text-center p-6 pointer-events-none">
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
+            <span className="material-symbols-outlined text-[28px]" aria-hidden="true">
+              audio_file
+            </span>
+          </div>
           <p className="text-sm font-semibold text-slate-900">
             Drop Lecture Audio to Transcribe Locally
           </p>
@@ -256,49 +276,55 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
         </div>
       )}
 
-      {/* Panel Header Toolbar */}
-      <div className="px-4 py-3 bg-white border-b border-gray-100 flex flex-wrap items-center justify-between gap-2 select-none">
+      {/* Single Unified Panel Header */}
+      <div className="px-5 py-3.5 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5 select-none shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isListening
-                  ? 'bg-emerald-500 animate-pulse'
-                  : status === 'paused'
-                  ? 'bg-amber-500'
-                  : 'bg-slate-300'
-              }`}
-            />
-            <h2 className="text-[13px] font-semibold tracking-tight text-slate-900">
-              Live Lecture Feed
-            </h2>
-          </div>
-          <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
-            <span id="sentence-counter">{sentences.length}</span> SENTENCES
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              isListening
+                ? 'bg-emerald-500 animate-pulse'
+                : status === 'paused'
+                ? 'bg-amber-500'
+                : status === 'importing'
+                ? 'bg-blue-500 animate-pulse'
+                : 'bg-slate-300'
+            }`}
+          />
+          <h2 className="text-[14px] font-semibold tracking-tight text-slate-900">
+            Transcript
+          </h2>
+          <span className="font-mono text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium tabular-nums">
+            <span id="sentence-counter">{sentences.length}</span>{' '}
+            {sentences.length === 1 ? 'line' : 'lines'}
           </span>
-          <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium hidden sm:inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> ASR 16kHz VAD
-          </span>
+          {isListening && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium hidden sm:inline-flex items-center gap-1">
+              Live
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Quick Filter Search Input */}
-          <div className="relative flex items-center bg-slate-50 border border-gray-200/70 rounded-md px-2 py-1">
-            <span className="material-symbols-outlined text-[15px] text-slate-400 mr-1" aria-hidden="true">
+          {/* Quick Search Input */}
+          <div className="relative flex items-center bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 focus-within:bg-white focus-within:border-blue-400 transition">
+            <span
+              className="material-symbols-outlined text-[15px] text-slate-400 mr-1.5"
+              aria-hidden="true"
+            >
               search
             </span>
             <input
               type="search"
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              placeholder="Filter transcript..."
+              placeholder="Search lecture..."
               aria-label="Filter transcript sentences"
-              className="bg-transparent text-slate-800 text-xs focus:outline-none w-24 sm:w-36 placeholder:text-slate-400 font-sans"
+              className="bg-transparent text-slate-800 text-xs focus:outline-none w-28 sm:w-40 placeholder:text-slate-400"
             />
             {filterQuery && (
               <button
                 onClick={() => setFilterQuery('')}
-                className="text-slate-400 hover:text-slate-600 text-xs ml-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 text-xs ml-1 cursor-pointer"
                 type="button"
                 aria-label="Clear transcript filter"
               >
@@ -317,20 +343,19 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
               }
             }}
             aria-expanded={showReplace}
-            className={`px-2 py-1 text-xs rounded border transition flex items-center gap-1 cursor-pointer ${
+            className={`h-8 px-2.5 text-xs rounded-lg border transition flex items-center gap-1 cursor-pointer ${
               showReplace
                 ? 'bg-blue-50 border-blue-200 text-blue-700 font-medium'
-                : 'bg-white border-gray-200/70 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                : 'bg-white border-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
             title="Find and replace misheard terms across the transcript"
           >
-            <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
+            <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
               find_replace
             </span>
-            <span className="hidden xl:inline">Replace</span>
+            <span className="hidden sm:inline">Replace</span>
           </button>
 
-          {/* Clear Feed Button */}
           {sentences.length > 0 && (
             <button
               onClick={() => {
@@ -338,32 +363,59 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                   resetSession()
                 }
               }}
-              className="px-2 py-1 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors flex items-center gap-1 cursor-pointer"
-              title="Archive & reset current session"
+              className="h-8 px-2 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition flex items-center cursor-pointer"
+              aria-label="Archive and reset session"
+              title="Archive & start fresh"
               type="button"
             >
-              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
+              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
                 delete_sweep
               </span>
-              <span className="hidden md:inline">Reset</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Expandable Find & Replace Bar (Meetily-style) */}
+      {/* Smart Muted-Mic Warning Banner (prevents confusion when hardware mic is muted!) */}
+      {micSilentWarning && isListening && (
+        <div
+          role="alert"
+          className="px-5 py-2.5 bg-amber-50 border-b border-amber-200/80 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900 shrink-0"
+        >
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[17px] text-amber-600" aria-hidden="true">
+              mic_off
+            </span>
+            <span>
+              <strong>No audio signal detected.</strong> Check if your microphone mute switch is on
+              or select another input device.
+            </span>
+          </div>
+          {onOpenSettings && (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="px-2.5 py-1 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-900 font-medium text-[11px] transition cursor-pointer"
+            >
+              Check Mic Settings
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Expandable Find & Replace Bar */}
       {showReplace && (
         <form
           onSubmit={handleReplaceAll}
-          className="px-4 py-2 bg-blue-50/40 border-b border-blue-100 flex flex-wrap items-center gap-2 text-xs"
+          className="px-5 py-2.5 bg-slate-50 border-b border-slate-200/70 flex flex-wrap items-center gap-2 text-xs shrink-0"
         >
           <input
             type="text"
             value={findTerm}
             onChange={(e) => setFindTerm(e.target.value)}
-            placeholder="Find term (e.g. hierarchisocial)"
+            placeholder="Find term..."
             aria-label="Find term in transcript"
-            className="bg-white border border-gray-200 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-blue-500 w-40 sm:w-48"
+            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 w-36 sm:w-44"
           />
           <span className="material-symbols-outlined text-[14px] text-slate-400" aria-hidden="true">
             arrow_forward
@@ -372,68 +424,51 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             type="text"
             value={replaceTerm}
             onChange={(e) => setReplaceTerm(e.target.value)}
-            placeholder="Replace with (e.g. hierarki sosial)"
+            placeholder="Replace with..."
             aria-label="Replacement text"
-            className="bg-white border border-gray-200 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-blue-500 w-40 sm:w-48"
+            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500 w-36 sm:w-44"
           />
-          <label className="flex items-center gap-1 text-[11px] text-slate-600 cursor-pointer select-none">
+          <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer select-none px-1">
             <input
               type="checkbox"
               checked={caseSensitive}
               onChange={(e) => setCaseSensitive(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600"
+              className="rounded border-slate-300 text-blue-600"
             />
             <span>Match case</span>
           </label>
           <button
             type="submit"
             disabled={!findTerm}
-            className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-[11px] font-medium transition cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-[11px] font-medium transition cursor-pointer"
           >
             Replace All
           </button>
           {replaceFeedback && (
-            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
               {replaceFeedback}
             </span>
           )}
         </form>
       )}
 
-      {/* Feed Context / Sub-banner */}
-      <div className="px-4 py-1.5 bg-slate-50/70 border-b border-gray-100 flex items-center justify-between text-slate-500 text-xs">
-        <div className="flex items-center gap-2 truncate">
-          <span className="font-mono text-blue-600 font-medium text-[11px]">{currentSessionId}</span>
-          <span className="text-gray-300">|</span>
-          <span className="truncate font-medium text-slate-700">{currentSessionTitle}</span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 font-mono text-[11px] text-slate-400 hidden sm:flex">
-          <span className="text-emerald-600">
-            {settings.engine === 'browser'
-              ? `Browser ${settings.browserModel}`
-              : `Python ${settings.pythonModel}`}
-          </span>
-          <span className="text-gray-300">|</span>
-          <span>{settings.language.toUpperCase()}</span>
-        </div>
-      </div>
-
-      {/* Click-to-Replay Audio Player Bar (shown whenever IndexedDB audio exists for this session) */}
+      {/* Refined Light-Surface Audio Replay Strip */}
       {audioUrl && (
-        <div className="px-4 py-2 bg-slate-900 text-slate-100 border-b border-slate-800 flex flex-wrap items-center gap-3 text-xs">
+        <div className="px-5 py-2.5 bg-slate-50/90 border-b border-slate-200/70 flex flex-wrap items-center gap-3 text-xs shrink-0">
           <button
             type="button"
             onClick={togglePlayback}
-            className="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition shrink-0 cursor-pointer"
+            className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-xs transition shrink-0 cursor-pointer"
             aria-label={isPlaying ? 'Pause lecture audio playback' : 'Play recorded lecture audio'}
           >
-            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
               {isPlaying ? 'pause' : 'play_arrow'}
             </span>
           </button>
 
-          <span className="font-mono text-[11px] text-slate-300 shrink-0">
-            {formatTimestamp(playbackTimeS * 1000)} / {formatTimestamp(audioDurationS * 1000)}
+          <span className="font-mono text-[11px] text-slate-600 tabular-nums shrink-0">
+            {formatTimestamp(playbackTimeS * 1000)}{' '}
+            <span className="text-slate-400">/ {formatTimestamp(audioDurationS * 1000)}</span>
           </span>
 
           <input
@@ -450,14 +485,14 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
               }
             }}
             aria-label="Seek lecture audio recording"
-            className="flex-1 min-w-[100px] accent-blue-500 h-1 cursor-pointer"
+            className="flex-1 min-w-[100px] accent-blue-600 h-1.5 cursor-pointer"
           />
 
           <button
             type="button"
             onClick={cyclePlaybackRate}
-            className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono text-[11px] transition cursor-pointer shrink-0"
-            title="Cycle audio playback speed"
+            className="px-2 py-1 rounded-md bg-white hover:bg-slate-100 border border-slate-200/80 text-slate-700 font-mono text-[11px] font-medium transition cursor-pointer shrink-0 tabular-nums"
+            title="Cycle playback speed"
           >
             {PLAYBACK_RATES[playbackRateIdx]}x
           </button>
@@ -470,46 +505,91 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                   window.confirm(
                     `Retranscribe this saved lecture audio using ${
                       settings.engine === 'browser' ? settings.browserModel : settings.pythonModel
-                    } (${settings.language.toUpperCase()})? Current sentences will be replaced.`
+                    } (${settings.language.toUpperCase()})? Current lines will be replaced.`
                   )
                 ) {
                   onRetranscribe()
                 }
               }}
-              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-[11px] font-medium flex items-center gap-1 transition cursor-pointer shrink-0"
-              title="Re-run local Whisper on this recording with current model & glossary settings"
+              className="px-2.5 py-1 rounded-md bg-white hover:bg-blue-50 border border-slate-200/80 hover:border-blue-200 text-slate-700 hover:text-blue-700 text-[11px] font-medium flex items-center gap-1 transition cursor-pointer shrink-0"
+              title="Re-run Whisper on this saved recording"
             >
-              <span className="material-symbols-outlined text-[13px]" aria-hidden="true">
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
                 autorenew
               </span>
               <span className="hidden sm:inline">Retranscribe</span>
             </button>
           )}
+
+          {!isBusy && (
+            <button
+              type="button"
+              onClick={() => void handleDiscardSavedAudio()}
+              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer shrink-0"
+              aria-label="Delete saved audio recording for this session"
+              title="Delete saved audio clip"
+            >
+              <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
+                close
+              </span>
+            </button>
+          )}
         </div>
       )}
 
-      {/* Scrollable Transcript Feed */}
+      {/* Scrollable Transcript Canvas */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-1.5 relative scroll-smooth bg-white"
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-2 relative scroll-smooth bg-white"
         id="transcript-scroll-area"
       >
         {filteredSentences.length === 0 && !partialText && !isSpeaking && !importJob?.active && (
-          <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400 select-none">
-            <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-                mic_none
+          <div className="h-full flex flex-col items-center justify-center text-center px-6 py-10 select-none">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 text-blue-600 flex items-center justify-center mb-4 shadow-xs">
+              <span className="material-symbols-outlined text-[26px]" aria-hidden="true">
+                graphic_eq
               </span>
             </div>
-            <p className="font-medium text-sm text-slate-700">
-              Lecture transcription canvas is ready
+            <h3 className="font-semibold text-[15px] text-slate-900 tracking-tight">
+              Ready to transcribe your lecture
+            </h3>
+            <p className="text-xs text-slate-500 mt-1.5 max-w-md leading-relaxed">
+              Speak into your microphone, capture a Zoom / YouTube tab with no bot, or drop an{' '}
+              <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[11px]">
+                .mp3 / .wav
+              </code>{' '}
+              recording here. Click any line to pin it as a study note.
             </p>
-            <p className="text-xs text-slate-400 mt-1 max-w-md leading-relaxed">
-              Click <strong className="text-slate-800">Start Lecture</strong> (Mic, Tab Audio, or
-              Mic + Tab) — or drag &amp; drop a pre-recorded <code className="text-slate-600">.mp3/.wav</code>{' '}
-              lecture file right here.
-            </p>
+
+            {!isBusy && (
+              <div className="flex flex-wrap items-center justify-center gap-2.5 mt-5">
+                {onStart && (
+                  <button
+                    type="button"
+                    onClick={onStart}
+                    className="h-9 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium shadow-sm shadow-blue-600/20 flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                      mic
+                    </span>
+                    <span>Start Live Recording</span>
+                  </button>
+                )}
+                {onPlaySample && (
+                  <button
+                    type="button"
+                    onClick={onPlaySample}
+                    className="h-9 px-3.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium shadow-2xs flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-blue-600" aria-hidden="true">
+                      play_circle
+                    </span>
+                    <span>Try Sample Lecture</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -525,22 +605,22 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
               onClick={() => {
                 if (!isEditingThis) toggleHighlight(s.id)
               }}
-              className={`group flex items-start gap-2.5 p-2.5 rounded-md transition-all cursor-pointer select-text relative border ${
+              className={`group flex items-start gap-3 px-3.5 py-3 rounded-xl transition-all cursor-pointer select-text relative border ${
                 isCurrentlyPlaying
-                  ? 'bg-blue-50/50 border-blue-300 ring-1 ring-blue-200'
+                  ? 'bg-blue-50/70 border-blue-300 shadow-2xs'
                   : s.highlighted
-                  ? 'is-starred bg-amber-50/50 border-amber-200/80'
-                  : 'bg-white border-transparent hover:border-gray-200/70 hover:bg-slate-50/60'
+                  ? 'is-starred bg-amber-50/60 border-amber-200/90 border-l-[3px] border-l-amber-500'
+                  : 'bg-white border-transparent hover:border-slate-200/80 hover:bg-slate-50/70'
               }`}
             >
-              {/* Star toggle icon */}
+              {/* Star toggle */}
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   toggleHighlight(s.id)
                 }}
                 type="button"
-                className={`shrink-0 pt-0.5 transition-transform group-hover:scale-110 cursor-pointer ${
+                className={`shrink-0 mt-0.5 transition-transform group-hover:scale-110 cursor-pointer ${
                   s.highlighted
                     ? 'text-amber-500'
                     : 'text-slate-300 group-hover:text-amber-500'
@@ -561,7 +641,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                 </span>
               </button>
 
-              {/* Monospace Timestamp (Click-to-Replay when audio is saved) */}
+              {/* Timestamp / Click-to-Replay Chip */}
               {audioUrl ? (
                 <button
                   type="button"
@@ -569,53 +649,48 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                     e.stopPropagation()
                     replayAt(s.startMs)
                   }}
-                  className={`font-mono text-xs shrink-0 pt-0.5 inline-flex items-center gap-0.5 rounded px-1 -mx-1 transition-colors cursor-pointer ${
+                  className={`font-mono text-[11px] tabular-nums shrink-0 mt-0.5 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 transition-colors cursor-pointer ${
                     isCurrentlyPlaying
                       ? 'bg-blue-600 text-white font-semibold'
                       : s.highlighted
-                      ? 'text-amber-800 hover:bg-amber-100 font-semibold'
-                      : 'text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                      ? 'bg-amber-100/80 text-amber-900 hover:bg-amber-200/80 font-medium'
+                      : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-700'
                   }`}
                   aria-label={`Replay audio at ${tsLabel}`}
-                  title="Click to replay recorded audio at this timestamp"
+                  title="Click to replay recorded audio from this moment"
                 >
                   <span className="material-symbols-outlined text-[13px]" aria-hidden="true">
                     {isCurrentlyPlaying ? 'volume_up' : 'play_arrow'}
                   </span>
-                  <span>[{tsLabel}]</span>
+                  <span>{tsLabel}</span>
                 </button>
               ) : (
                 <span
-                  className={`font-mono text-xs shrink-0 pt-0.5 select-none ${
+                  className={`font-mono text-[11px] tabular-nums shrink-0 mt-0.5 px-1.5 py-0.5 rounded-md select-none ${
                     s.highlighted
-                      ? 'text-amber-800 font-semibold'
-                      : 'text-slate-400 group-hover:text-primary transition-colors'
+                      ? 'bg-amber-100/80 text-amber-900 font-medium'
+                      : 'bg-slate-100/80 text-slate-500'
                   }`}
                 >
-                  [{tsLabel}]
+                  {tsLabel}
                 </span>
               )}
 
-              {/* Sentence Content or Inline Editor */}
+              {/* Content or Inline Editor */}
               <div className="flex-1 min-w-0">
-                {(s.highlighted || s.speaker || s.edited) && !isEditingThis && (
+                {(s.speaker || s.edited) && !isEditingThis && (
                   <div className="flex flex-wrap items-center gap-1.5 mb-1">
                     {s.speaker && (
                       <span
-                        className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded font-mono ${
+                        className={`text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded font-mono ${
                           s.speaker === 'Lecturer'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/60'
+                            ? 'bg-indigo-50 text-indigo-700'
                             : s.speaker === 'You'
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                            ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-slate-100 text-slate-600'
                         }`}
                       >
                         {s.speaker}
-                      </span>
-                    )}
-                    {s.highlighted && (
-                      <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-mono">
-                        KEYNOTE
                       </span>
                     )}
                     {s.edited && (
@@ -644,20 +719,20 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                       }}
                       autoFocus
                       aria-label={`Edit transcript text at ${tsLabel}`}
-                      className="flex-1 bg-white border border-blue-400 rounded px-2.5 py-1 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      className="flex-1 bg-white border border-blue-400 rounded-lg px-2.5 py-1.5 text-[14px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     />
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={commitEdit}
-                        className="px-2.5 py-1 rounded bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 cursor-pointer"
                       >
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="px-2 py-1 rounded border border-gray-200 bg-white text-slate-600 text-xs hover:bg-slate-50 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs hover:bg-slate-50 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -669,7 +744,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                       e.stopPropagation()
                       startEditing(s.id, s.text)
                     }}
-                    className={`text-sm leading-relaxed ${
+                    className={`text-[15px] leading-relaxed ${
                       s.highlighted ? 'text-slate-900 font-medium' : 'text-slate-800'
                     }`}
                     title="Click to star · Double-click to edit"
@@ -679,18 +754,18 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                 )}
               </div>
 
-              {/* Row Hover Actions (Edit / Delete) */}
+              {/* Hover Row Actions */}
               {!isEditingThis && (
                 <div
-                  className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0 pt-0.5"
+                  className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     type="button"
                     onClick={() => startEditing(s.id, s.text)}
-                    className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
                     aria-label={`Edit sentence at ${tsLabel}`}
-                    title="Edit sentence"
+                    title="Edit text"
                   >
                     <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
                       edit
@@ -699,9 +774,9 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                   <button
                     type="button"
                     onClick={() => deleteSentence(s.id)}
-                    className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                     aria-label={`Delete sentence at ${tsLabel}`}
-                    title="Delete sentence"
+                    title="Delete line"
                   >
                     <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
                       delete
@@ -713,38 +788,38 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
           )
         })}
 
-        {/* In-Line Live Speech Typing Stream Row */}
+        {/* In-Line Live Speech Streaming Row */}
         {(isSpeaking || partialText) && (
-          <article className="flex items-start gap-3 p-2.5 rounded-md bg-blue-50/60 border border-blue-200/60 relative">
-            <div className="shrink-0 pt-0.5 text-blue-500">
+          <article className="flex items-start gap-3 px-3.5 py-3 rounded-xl bg-blue-50/70 border border-blue-200/80 relative">
+            <div className="shrink-0 mt-0.5 text-blue-600">
               <span className="material-symbols-outlined text-[18px] animate-pulse" aria-hidden="true">
                 mic
               </span>
             </div>
 
-            <span className="font-mono text-xs text-blue-600 font-semibold shrink-0 pt-0.5 select-none">
-              [{formatTimestamp(liveStartMs)}]
+            <span className="font-mono text-[11px] tabular-nums bg-blue-100 text-blue-700 font-semibold px-1.5 py-0.5 rounded-md shrink-0 mt-0.5 select-none">
+              {formatTimestamp(liveStartMs)}
             </span>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-600 text-white font-mono flex items-center gap-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-600 text-white font-mono inline-flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  LIVE STREAMING
+                  Live
                 </span>
               </div>
-              <p className="text-sm text-slate-900 font-medium leading-relaxed">
+              <p className="text-[15px] text-slate-900 font-medium leading-relaxed">
                 {partialText || (
-                  <span className="italic text-slate-400">Listening to speech...</span>
+                  <span className="italic text-slate-400 font-normal">Listening to speech...</span>
                 )}
-                <span className="inline-block w-1.5 h-4 bg-blue-600 ml-1 align-middle animate-pulse" />
+                <span className="inline-block w-1.5 h-4 bg-blue-600 ml-1 align-middle animate-pulse rounded-xs" />
               </p>
             </div>
           </article>
         )}
       </div>
 
-      {/* Floating Scroll-to-Bottom Pill when user scrolled up */}
+      {/* Scroll-to-Live Floating Pill */}
       {userHasScrolledUp && (
         <button
           type="button"
@@ -753,7 +828,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
             const el = scrollContainerRef.current
             if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
           }}
-          className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-medium shadow-md hover:bg-slate-800 flex items-center gap-1 cursor-pointer"
+          className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-slate-900 text-white text-xs font-medium shadow-lg hover:bg-slate-800 flex items-center gap-1 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
             arrow_downward

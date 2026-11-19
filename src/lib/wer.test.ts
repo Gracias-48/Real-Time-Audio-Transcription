@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeWer, analyzeGlossary } from './wer'
+import { computeCer, computeWer, analyzeGlossary } from './wer'
 
 describe('Word Error Rate (WER) computation', () => {
   it('handles identical strings (WER = 0)', () => {
@@ -86,5 +86,12 @@ describe('Word Error Rate (WER) computation', () => {
     expect(backprop?.recognized).toBe(false) // mis-transcribed as 'back propagation'
     expect(conv?.recognized).toBe(false) // mis-transcribed as 'convolution'
     expect(latency?.recognized).toBe(true)
+  })
+
+  it('computes accurate character error rate (CER)', () => {
+    expect(computeCer('bahasa indonesia', 'Bahasa Indonesia!')).toBe(0)
+    // "kamus" -> "kamu" = 1 deletion over 5 chars = 0.2
+    expect(computeCer('kamus', 'kamu')).toBeCloseTo(0.2, 4)
+    expect(computeCer('hello', '')).toBe(1)
   })
 })
