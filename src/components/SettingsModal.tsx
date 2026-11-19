@@ -119,15 +119,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         {/* Settings Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 text-sm text-slate-700">
           {isRecordingActive && (
-            <div className="px-3.5 py-2.5 rounded-lg bg-blue-50 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2">
-              <span className="material-symbols-outlined text-[16px] text-blue-600 mt-0.5 shrink-0" aria-hidden="true">
+            <div className="px-3.5 py-2.5 rounded-lg bg-amber-50 border border-amber-200/80 text-xs text-amber-900 flex items-start gap-2">
+              <span className="material-symbols-outlined text-[16px] text-amber-600 mt-0.5 shrink-0" aria-hidden="true">
                 info
               </span>
               <span>
-                <strong>Recording is active:</strong> Changing <strong>Language</strong> or{' '}
-                <strong>Glossary</strong> applies live immediately. Changing{' '}
-                <strong>Model</strong>, <strong>Engine</strong>, or <strong>Audio Input</strong>{' '}
-                requires stopping and starting the lecture again.
+                <strong>Recording is active:</strong> To switch <strong>Language</strong>,{' '}
+                <strong>Whisper Model</strong>, or <strong>Audio Input</strong>, stop and restart
+                the lecture recording so the engine initializes cleanly.
               </span>
             </div>
           )}

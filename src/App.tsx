@@ -12,15 +12,18 @@ import { useAppStore } from './lib/store'
 import { pipelineInstance } from './lib/pipeline'
 
 export const App: React.FC = () => {
-  const { currentTab, setCurrentTab, settings, toast, dismissToast } = useAppStore()
+  const {
+    currentTab,
+    setCurrentTab,
+    settings,
+    updateSettings,
+    toast,
+    showToast,
+    dismissToast,
+  } = useAppStore()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-
-  // Live-sync language changes directly into the active multilingual Whisper engine (no restart needed!)
-  useEffect(() => {
-    pipelineInstance.syncLiveLanguage(settings.language)
-  }, [settings.language])
 
   // Sync initial URL path to currentTab, and listen to browser popstate (back/forward)
   useEffect(() => {
@@ -90,6 +93,14 @@ export const App: React.FC = () => {
       console.error('Retranscribe failed:', err)
       alert(`Could not retranscribe session audio: ${err?.message || err}`)
     }
+  }
+
+  const handleStopAndSwitchLanguage = async (targetLang: 'id' | 'en' | 'auto') => {
+    dismissToast()
+    await pipelineInstance.stop()
+    updateSettings({ language: targetLang })
+    const label = targetLang === 'en' ? 'English (EN)' : 'Bahasa Indonesia (ID)'
+    showToast(`Switched to ${label} — click Start Lecture to begin.`, 'info')
   }
 
   return (
@@ -171,9 +182,9 @@ export const App: React.FC = () => {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border shadow-lg flex items-center gap-2.5 text-xs font-medium max-w-md ${
+          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border shadow-lg flex flex-wrap items-center gap-2.5 text-xs font-medium max-w-lg ${
             toast.tone === 'warning'
-              ? 'bg-amber-50 border-amber-200 text-amber-900'
+              ? 'bg-amber-50 border-amber-200 text-amber-950'
               : 'bg-slate-900 border-slate-800 text-white'
           }`}
         >
@@ -185,7 +196,16 @@ export const App: React.FC = () => {
           >
             {toast.tone === 'warning' ? 'warning' : 'translate'}
           </span>
-          <span>{toast.message}</span>
+          <span className="flex-1 min-w-[180px]">{toast.message}</span>
+          {toast.actionLabel && toast.pendingLanguage && (
+            <button
+              type="button"
+              onClick={() => void handleStopAndSwitchLanguage(toast.pendingLanguage!)}
+              className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition cursor-pointer shrink-0 shadow-2xs"
+            >
+              {toast.actionLabel}
+            </button>
+          )}
           <button
             type="button"
             onClick={dismissToast}

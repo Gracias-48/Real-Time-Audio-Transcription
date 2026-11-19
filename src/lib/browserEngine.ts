@@ -65,6 +65,7 @@ export class BrowserWhisperEngine implements ASREngine {
         data: {
           model: this.model,
           device: this.prefDevice,
+          language: this.language,
         },
       })
     })

@@ -226,7 +226,13 @@ interface AppState {
   audioLevel: number
   isClipping: boolean
   micSilentWarning: boolean
-  toast: { id: number; message: string; tone: 'info' | 'warning' } | null
+  toast: {
+    id: number
+    message: string
+    tone: 'info' | 'warning'
+    actionLabel?: string
+    pendingLanguage?: Settings['language']
+  } | null
   importJob: ImportJobState | null
   latencyMs: number
   rtf: number
@@ -243,7 +249,11 @@ interface AppState {
   setIsSpeaking: (isSpeaking: boolean) => void
   setAudioLevel: (level: number, clipping?: boolean) => void
   setMicSilentWarning: (silent: boolean) => void
-  showToast: (message: string, tone?: 'info' | 'warning') => void
+  showToast: (
+    message: string,
+    tone?: 'info' | 'warning',
+    opts?: { actionLabel?: string; pendingLanguage?: Settings['language'] }
+  ) => void
   dismissToast: () => void
   setImportJob: (job: ImportJobState | null) => void
   setDownloadProgress: (p: number | null) => void
@@ -531,14 +541,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
   setAudioLevel: (level, clipping = false) => set({ audioLevel: level, isClipping: clipping }),
   setMicSilentWarning: (silent) => set({ micSilentWarning: silent }),
-  showToast: (message, tone = 'info') => {
+  showToast: (message, tone = 'info', opts) => {
     const id = Date.now()
-    set({ toast: { id, message, tone } })
+    set({
+      toast: {
+        id,
+        message,
+        tone,
+        actionLabel: opts?.actionLabel,
+        pendingLanguage: opts?.pendingLanguage,
+      },
+    })
+    const duration = opts?.actionLabel ? 7000 : 4500
     setTimeout(() => {
       if (get().toast?.id === id) {
         set({ toast: null })
       }
-    }, 4500)
+    }, duration)
   },
   dismissToast: () => set({ toast: null }),
   setImportJob: (job) => set({ importJob: job }),
@@ -760,7 +779,23 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateSettings: (partial) => {
     const prev = get()
-    const isActiveSession = prev.status === 'listening' || prev.status === 'paused'
+    const isActiveSession =
+      prev.status === 'listening' || prev.status === 'paused' || prev.status === 'loading'
+
+    // Block live language switching mid-recording — prompt user to Stop & Switch cleanly
+    if (isActiveSession && partial.language !== undefined && partial.language !== prev.settings.language) {
+      const targetName = partial.language === 'en' ? 'English (EN)' : 'Bahasa Indonesia (ID)'
+      const shortCode = partial.language.toUpperCase()
+      get().showToast(
+        `Stop recording first to change language to ${targetName}.`,
+        'warning',
+        {
+          actionLabel: `Stop & Switch to ${shortCode}`,
+          pendingLanguage: partial.language,
+        }
+      )
+      return
+    }
 
     set((state) => {
       const updated = { ...state.settings, ...partial }
@@ -790,12 +825,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         get().showToast(
           'Model or audio input changed — stop and restart recording to apply.',
           'warning'
-        )
-      } else if (partial.language !== undefined && partial.language !== prev.settings.language) {
-        const langName = partial.language === 'en' ? 'English (EN)' : 'Bahasa Indonesia (ID)'
-        get().showToast(
-          `Switched live transcription to ${langName} — active immediately!`,
-          'info'
         )
       }
     }

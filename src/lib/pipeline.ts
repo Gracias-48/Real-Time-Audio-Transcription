@@ -192,18 +192,22 @@ export class TranscriptionPipeline {
       settings.engine,
       settings.engine === 'browser' ? settings.browserModel : settings.pythonModel,
       settings.device,
+      settings.language,
       settings.serverUrl,
     ].join('|')
   }
 
-  /** Instantly syncs language changes to the running multilingual Whisper engine with zero restart. */
-  syncLiveLanguage(language: string): void {
-    if (this.engine) {
-      this.engine.language = language
+  /** Avoid biasing English streams with the default Indonesian glossary prompt. */
+  private getEffectivePrompt(settings: Settings): string | undefined {
+    const raw = settings.glossaryPrompt?.trim()
+    if (!raw) return undefined
+    if (
+      settings.language === 'en' &&
+      raw.toLowerCase().startsWith('transkripsi perkuliahan dalam bahasa indonesia')
+    ) {
+      return undefined
     }
-    if (this.isRunning && this.isSpeaking) {
-      useAppStore.getState().setPartialText('')
-    }
+    return raw
   }
 
   async initialize(settings: Settings, onProgress: (p: number) => void): Promise<void> {
@@ -769,7 +773,7 @@ export class TranscriptionPipeline {
     try {
       const res = await this.engine.transcribe(audio, {
         final: false,
-        prompt: settings.glossaryPrompt,
+        prompt: this.getEffectivePrompt(settings),
         language: settings.language,
       })
       const latencyMs = Math.round(performance.now() - t0)
@@ -822,7 +826,7 @@ export class TranscriptionPipeline {
     try {
       const res = await this.engine.transcribe(audio, {
         final: true,
-        prompt: settings.glossaryPrompt,
+        prompt: this.getEffectivePrompt(settings),
         language: settings.language,
       })
       const latencyMs = Math.round(performance.now() - t0)

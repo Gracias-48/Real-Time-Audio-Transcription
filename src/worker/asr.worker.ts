@@ -86,7 +86,7 @@ self.onmessage = async (e: MessageEvent) => {
             chunk_length_s: 30,
           }
           if (!isEnglishOnly) {
-            warmupOpts.language = 'id'
+            warmupOpts.language = data?.language || 'id'
             warmupOpts.task = 'transcribe'
           }
           await transcriber(new Float32Array(16000), warmupOpts)

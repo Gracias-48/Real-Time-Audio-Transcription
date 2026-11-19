@@ -130,9 +130,16 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
         {/* Language Segmented Pill */}
         <div
-          className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/70 text-[11px] font-medium"
+          className={`inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/70 text-[11px] font-medium ${
+            status === 'listening' || status === 'paused' ? 'opacity-85' : ''
+          }`}
           role="group"
           aria-label="Transcription language"
+          title={
+            status === 'listening' || status === 'paused'
+              ? 'Stop recording first to change transcription language'
+              : 'Select transcription language'
+          }
         >
           <button
             type="button"
