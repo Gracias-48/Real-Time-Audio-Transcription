@@ -22,6 +22,7 @@ export const App: React.FC = () => {
     dismissToast,
   } = useAppStore()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isInspectorOpen, setIsInspectorOpen] = useState(true)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
@@ -104,60 +105,57 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#f6f7f9] font-sans text-slate-900 antialiased selection:bg-blue-600 selection:text-white h-dvh w-full flex overflow-hidden">
-      {/* Studio Sidebar Navigation Rail */}
+    <div className="bg-white font-sans text-[#141413] antialiased selection:bg-[#141413] selection:text-white h-dvh w-full flex overflow-hidden">
+      {/* Pane A: Left Sidebar (240px fixed, #F7F7F5, hairline right border) */}
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
-      {/* Right Workspace Shell (Header + Full-Height Viewport + Grounded Dock) */}
-      <div className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden">
+      {/* Right Shell: Top Utility Bar spanning Center + Right Inspector */}
+      <div className="flex-1 flex flex-col min-w-0 h-dvh overflow-hidden bg-white">
         <TopBar
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenExport={() => setIsExportOpen(true)}
+          isInspectorOpen={isInspectorOpen}
+          onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
         />
 
-        {/* View 1: Live Studio (100% Viewport Height Split Workspace, zero dead bottom gap) */}
+        {/* View 1: Edge-to-Edge Live Workbench */}
         {currentTab === 'transcriber' && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <main className="flex-1 min-h-0 p-3 sm:p-5 overflow-y-auto lg:overflow-hidden">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[540px] lg:min-h-0 max-w-[1600px] mx-auto">
-                {/* LEFT COLUMN (~66%): Live Transcript Studio */}
-                <div className="lg:col-span-8 h-[60vh] lg:h-full min-h-0 flex flex-col">
-                  <TranscriptPanel
-                    onStart={handleStart}
-                    onImportAudio={handleImportAudio}
-                    onPlaySample={handlePlaySample}
-                    onRetranscribe={handleRetranscribe}
-                    onOpenSettings={() => setIsSettingsOpen(true)}
-                  />
-                </div>
+          <div className="flex-1 flex min-h-0 overflow-hidden bg-white">
+            {/* Pane C: Center Reading & Transcript Canvas + Floating Capture Dock */}
+            <main className="flex-1 min-w-0 relative flex flex-col bg-white overflow-hidden">
+              <TranscriptPanel
+                onImportAudio={handleImportAudio}
+                onPlaySample={handlePlaySample}
+                onRetranscribe={handleRetranscribe}
+                onOpenSettings={() => setIsSettingsOpen(true)}
+              />
 
-                {/* RIGHT COLUMN (~34%): Key Lecture Notes & Live Study Summary */}
-                <div className="lg:col-span-4 h-[50vh] lg:h-full min-h-0 flex flex-col">
-                  <KeyNotesPanel onOpenExport={() => setIsExportOpen(true)} />
-                </div>
-              </div>
+              {/* Pane D: Floating Capture Dock centered at bottom of Center Canvas */}
+              <BottomBar
+                onStart={handleStart}
+                onStop={handleStop}
+                onPause={handlePause}
+                onResume={handleResume}
+                onImportAudio={handleImportAudio}
+                onCancelImport={handleCancelImport}
+              />
             </main>
 
-            {/* Grounded Studio Transport Dock */}
-            <BottomBar
-              onStart={handleStart}
-              onStop={handleStop}
-              onPause={handlePause}
-              onResume={handleResume}
-              onImportAudio={handleImportAudio}
-              onCancelImport={handleCancelImport}
-            />
+            {/* Pane E: Right Inspector Panel (320px fixed, #FAFAFA, hairline left border) */}
+            {isInspectorOpen && (
+              <KeyNotesPanel onOpenExport={() => setIsExportOpen(true)} />
+            )}
           </div>
         )}
 
         {/* View 2: Session Archive */}
         {currentTab === 'archive' && (
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-white">
             <SessionArchive
               onOpenExport={() => setIsExportOpen(true)}
               onImportAudio={handleImportAudio}
@@ -167,7 +165,7 @@ export const App: React.FC = () => {
 
         {/* View 3: Scientific Evaluation Suite */}
         {currentTab === 'evaluate' && (
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-white">
             <EvaluatePage />
           </main>
         )}
@@ -177,31 +175,29 @@ export const App: React.FC = () => {
       <ExportModal isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
-      {/* Live Notification Toast (Language Switch / Restart Hint) */}
+      {/* Warm-Monochrome Floating Toast Notification */}
       {toast && (
         <div
           role="status"
           aria-live="polite"
-          className={`fixed top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border shadow-lg flex flex-wrap items-center gap-2.5 text-xs font-medium max-w-lg ${
+          className={`fixed top-14 left-1/2 -translate-x-1/2 z-50 px-3.5 py-2 rounded-xl flex flex-wrap items-center gap-2.5 text-[12px] font-medium max-w-lg shadow-[0_4px_20px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.06)] ${
             toast.tone === 'warning'
-              ? 'bg-amber-50 border-amber-200 text-amber-950'
-              : 'bg-slate-900 border-slate-800 text-white'
+              ? 'bg-[#FEFCE8] text-[#141413] border border-[#E6E6E3]'
+              : 'bg-[#141413] text-white'
           }`}
         >
           <span
-            className={`material-symbols-outlined text-[17px] shrink-0 ${
-              toast.tone === 'warning' ? 'text-amber-600' : 'text-emerald-400'
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+              toast.tone === 'warning' ? 'bg-[#D97706]' : 'bg-[#16A34A]'
             }`}
             aria-hidden="true"
-          >
-            {toast.tone === 'warning' ? 'warning' : 'translate'}
-          </span>
+          />
           <span className="flex-1 min-w-[180px]">{toast.message}</span>
           {toast.actionLabel && toast.pendingLanguage && (
             <button
               type="button"
               onClick={() => void handleStopAndSwitchLanguage(toast.pendingLanguage!)}
-              className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition cursor-pointer shrink-0 shadow-2xs"
+              className="h-6 px-2.5 rounded-[6px] bg-[#141413] hover:bg-[#2A2A28] text-white text-[11px] font-medium transition-colors duration-150 cursor-pointer shrink-0"
             >
               {toast.actionLabel}
             </button>
@@ -210,10 +206,10 @@ export const App: React.FC = () => {
             type="button"
             onClick={dismissToast}
             aria-label="Dismiss notification"
-            className={`p-0.5 rounded transition cursor-pointer shrink-0 ${
+            className={`p-0.5 rounded-[6px] transition-colors duration-150 cursor-pointer shrink-0 ${
               toast.tone === 'warning'
-                ? 'text-amber-700 hover:bg-amber-100'
-                : 'text-slate-400 hover:text-white'
+                ? 'text-[#5C5C59] hover:text-[#141413] hover:bg-[#F1F1EF]'
+                : 'text-[#8E8E8A] hover:text-white'
             }`}
           >
             <span className="material-symbols-outlined text-[15px]" aria-hidden="true">

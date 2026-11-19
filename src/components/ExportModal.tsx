@@ -70,7 +70,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       : activeTab === 'json'
       ? jsonContent
       : activeTab === 'srt'
-      ? srtContent || 'No timestamped sentences available for SRT export yet.'
+      ? srtContent || 'No timestamped segments available for SRT export yet.'
       : summaryTemplateContent
 
   const handleDownload = () => {
@@ -92,7 +92,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   const handlePrintPdf = () => {
     const ok = printStudySheetPdf(payload)
     if (!ok) {
-      setPrintNotice('Pop-up blocked — allow pop-ups for this site to print/save PDF.')
+      setPrintNotice('Pop-up blocked — allow pop-ups for this site to print or save PDF.')
       setTimeout(() => setPrintNotice(null), 4000)
     }
   }
@@ -100,7 +100,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
   const handleCopy = () => {
     void navigator.clipboard.writeText(previewContent)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => setCopied(false), 1800)
   }
 
   return (
@@ -110,41 +110,34 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
       aria-labelledby={titleId}
       {...({ closedby: 'any' } as Record<string, string>)}
     >
-      <div className="bg-white rounded-xl border border-gray-200/80 shadow-2xl w-full flex flex-col max-h-[90dvh] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E6E6E3] shadow-[0_12px_40px_rgba(0,0,0,0.12)] w-full flex flex-col max-h-[90dvh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
-                file_download
-              </span>
-            </div>
-            <div>
-              <h2 id={titleId} className="text-sm font-semibold tracking-tight text-slate-900">
-                Export Study Notes &amp; Subtitles
-              </h2>
-              <p className="text-xs text-slate-400">
-                100% on-device structured templates — zero API keys or subscriptions
-              </p>
-            </div>
+        <div className="px-5 py-3.5 border-b border-[#E6E6E3] flex items-center justify-between">
+          <div>
+            <h2 id={titleId} className="text-[14px] font-semibold tracking-[-0.01em] text-[#141413]">
+              Export Lecture Notes
+            </h2>
+            <p className="text-[12px] text-[#8E8E8A] mt-0.5">
+              Markdown, structured study templates, SRT subtitles, JSON, or printable PDF
+            </p>
           </div>
           <button
             onClick={onClose}
             type="button"
             aria-label="Close export dialog"
-            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            className="w-7 h-7 rounded-[6px] text-[#8E8E8A] hover:text-[#141413] hover:bg-[#F1F1EF] flex items-center justify-center transition-colors duration-150 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
               close
             </span>
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Study Template Selector (Zero-API Deterministic Templates) */}
-          <div className="px-6 pt-4 pb-2">
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 font-mono mb-2">
-              Study Notes Template (Offline Bilingual ID + EN)
+          {/* Study Template Selector */}
+          <div className="px-5 pt-4 pb-2">
+            <span className="block text-[11px] font-medium uppercase tracking-[0.06em] text-[#8E8E8A] mb-2">
+              Study Template
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {STUDY_TEMPLATES.map((tpl) => {
@@ -155,16 +148,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                     type="button"
                     aria-pressed={active}
                     onClick={() => updateSettings({ summaryTemplate: tpl.id })}
-                    className={`p-2 rounded-lg border text-left transition cursor-pointer ${
+                    className={`p-2.5 rounded-[6px] border text-left transition-colors duration-150 cursor-pointer ${
                       active
-                        ? 'bg-blue-50/70 border-blue-500 text-slate-900'
-                        : 'bg-white border-gray-200 hover:border-gray-300 text-slate-600'
+                        ? 'bg-[#F7F7F5] border-[#141413] text-[#141413]'
+                        : 'bg-white border-[#E6E6E3] hover:bg-[#FAFAFA] text-[#5C5C59]'
                     }`}
                   >
-                    <div className="text-xs font-semibold text-slate-900 truncate">
+                    <div className="text-[12px] font-medium text-[#141413] truncate">
                       {tpl.label}
                     </div>
-                    <div className="text-[10px] text-slate-400 leading-snug mt-0.5 line-clamp-2">
+                    <div className="text-[11px] text-[#8E8E8A] leading-snug mt-0.5 line-clamp-2">
                       {tpl.shortDescription}
                     </div>
                   </button>
@@ -174,12 +167,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {/* Format Tab Switcher */}
-          <div className="px-6 pt-2">
-            <div className="flex p-1 bg-slate-100/70 rounded-md gap-1">
+          <div className="px-5 pt-2">
+            <div className="flex p-0.5 bg-[#F1F1EF] rounded-[6px] gap-0.5">
               {(
                 [
                   { id: 'markdown', label: 'Markdown (.md)' },
-                  { id: 'summary', label: 'Study Template' },
+                  { id: 'summary', label: 'Study Outline' },
                   { id: 'srt', label: 'Subtitles (.srt)' },
                   { id: 'json', label: 'JSON (.json)' },
                 ] as const
@@ -189,10 +182,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                   onClick={() => setActiveTab(tab.id)}
                   type="button"
                   aria-pressed={activeTab === tab.id}
-                  className={`flex-1 py-1.5 px-2 rounded text-xs font-medium transition cursor-pointer ${
+                  className={`flex-1 h-7 px-2 rounded-[4px] text-[12px] font-medium transition-colors duration-150 cursor-pointer ${
                     activeTab === tab.id
-                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-[#141413] shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
+                      : 'text-[#5C5C59] hover:text-[#141413]'
                   }`}
                 >
                   {tab.label}
@@ -202,16 +195,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
           </div>
 
           {/* Options */}
-          <div className="px-6 py-3 flex flex-wrap items-center gap-5 text-xs text-slate-600">
+          <div className="px-5 py-3 flex flex-wrap items-center gap-5 text-[12px] text-[#5C5C59]">
             <label htmlFor="export-inc-transcript" className="flex items-center gap-2 cursor-pointer">
               <input
                 id="export-inc-transcript"
                 type="checkbox"
                 checked={includeTranscript}
                 onChange={(e) => setIncludeTranscript(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-3.5 h-3.5 rounded border-[#E6E6E3] accent-[#141413]"
               />
-              <span>Full Lecture Transcript</span>
+              <span>Full Transcript</span>
             </label>
 
             <label htmlFor="export-inc-highlights" className="flex items-center gap-2 cursor-pointer">
@@ -220,7 +213,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 type="checkbox"
                 checked={includeHighlights}
                 onChange={(e) => setIncludeHighlights(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-3.5 h-3.5 rounded border-[#E6E6E3] accent-[#141413]"
               />
               <span>Starred Notes ({highlights.length})</span>
             </label>
@@ -231,36 +224,35 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
                 type="checkbox"
                 checked={includeMetadata}
                 onChange={(e) => setIncludeMetadata(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="w-3.5 h-3.5 rounded border-[#E6E6E3] accent-[#141413]"
               />
-              <span>Acoustic Telemetry (Latency / RTF)</span>
+              <span>Telemetry (Lat / RTF)</span>
             </label>
           </div>
 
-          {/* Code Preview */}
-          <div className="px-6 pb-3">
-            <pre className="p-4 bg-slate-900 text-slate-200 rounded-lg text-xs font-mono max-h-56 overflow-y-auto leading-relaxed border border-slate-800 whitespace-pre-wrap">
+          {/* Preview */}
+          <div className="px-5 pb-3">
+            <pre className="p-3.5 bg-[#FAFAFA] text-[#1F1F1E] rounded-lg text-[12px] font-mono max-h-56 overflow-y-auto leading-relaxed border border-[#E6E6E3] whitespace-pre-wrap">
               {previewContent}
             </pre>
             {printNotice && (
-              <p className="mt-2 text-xs text-rose-600 font-medium">{printNotice}</p>
+              <p className="mt-2 text-[12px] text-[#DC2626] font-medium">{printNotice}</p>
             )}
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 bg-slate-50/70 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-400 font-mono">
-            {filteredSentences.length} sentences · 100% local
+        <div className="px-5 py-3 bg-[#FAFAFA] border-t border-[#E6E6E3] flex flex-wrap items-center justify-between gap-2">
+          <span className="text-[11px] text-[#8E8E8A] font-mono tabular-nums">
+            {filteredSentences.length} segments
           </span>
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handlePrintPdf}
               type="button"
-              className="h-8 px-3 rounded-md border border-blue-200 bg-blue-50 hover:bg-blue-100 text-xs font-medium text-blue-700 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              title="Open formatted academic study sheet for Print / Save as PDF"
+              className="h-8 px-3 rounded-[6px] border border-[#E6E6E3] bg-white hover:bg-[#F1F1EF] text-[12px] font-medium text-[#141413] transition-colors duration-150 inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
+              <span className="material-symbols-outlined text-[15px] text-[#5C5C59]" aria-hidden="true">
                 picture_as_pdf
               </span>
               <span>Print / PDF</span>
@@ -268,9 +260,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             <button
               onClick={handleCopy}
               type="button"
-              className="h-8 px-3 rounded-md border border-gray-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="h-8 px-3 rounded-[6px] border border-[#E6E6E3] bg-white hover:bg-[#F1F1EF] text-[12px] font-medium text-[#141413] transition-colors duration-150 inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
+              <span className="material-symbols-outlined text-[15px] text-[#5C5C59]" aria-hidden="true">
                 {copied ? 'check' : 'content_copy'}
               </span>
               <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -278,7 +270,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose }) => 
             <button
               onClick={handleDownload}
               type="button"
-              className="h-8 px-4 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              className="h-8 px-3.5 rounded-[6px] bg-[#141413] hover:bg-[#2A2A28] text-white text-[12px] font-medium transition-colors duration-150 inline-flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
                 download

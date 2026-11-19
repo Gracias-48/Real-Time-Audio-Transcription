@@ -19,6 +19,15 @@ const STOP_WORDS = new Set([
   "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's",
   'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you',
   "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves', 'just', 'like', 'also',
+  // Common spoken English filler words so extracted topics stay meaningful
+  'see', 'seen', 'saw', 'finally', 'choices', 'choice', 'actually', 'really', 'basically', 'going', 'gonna',
+  'want', 'wanted', 'think', 'know', 'right', 'well', 'okay', 'yeah', 'look', 'looking', 'thing', 'things',
+  'something', 'anything', 'everything', 'nothing', 'make', 'made', 'making', 'take', 'taken', 'get', 'got',
+  'getting', 'say', 'said', 'saying', 'come', 'came', 'let', 'use', 'used', 'using', 'need', 'needed', 'even',
+  'still', 'much', 'many', 'first', 'second', 'third', 'next', 'last', 'now', 'today', 'back', 'around',
+  'kind', 'sort', 'lot', 'lots', 'maybe', 'probably', 'already', 'always', 'never', 'often', 'good', 'great',
+  'better', 'best', 'little', 'big', 'new', 'old', 'different', 'able', 'sure', 'yes', 'one', 'two', 'three',
+  'four', 'five', 'part', 'way', 'time', 'put', 'give', 'tell', 'talk', 'talking', 'mean', 'means', 'feel',
   // Indonesian stop words
   'ada', 'adalah', 'adapun', 'agak', 'agar', 'akan', 'aku', 'amat', 'anda', 'antara', 'apa', 'apabila',
   'apakah', 'apalagi', 'atau', 'awal', 'bagai', 'bagaimana', 'bagi', 'bahkan', 'bahwa', 'baik', 'banyak',

@@ -1,58 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #f6f7f9;
+  /* Warm-Monochrome Studio Palette (Linear / Granola / Notion inspired) */
+  --color-canvas: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-dim: #f1f5f9;
-  --color-surface-bright: #ffffff;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f8f9fb;
-  --color-surface-container: #f1f5f9;
-  --color-surface-container-high: #e2e8f0;
-  --color-surface-container-highest: #cbd5e1;
+  --color-surface-sidebar: #f7f7f5;
+  --color-surface-inspector: #fafafa;
+  --color-surface-hover: #f1f1ef;
+  --color-surface-active: #ebebe8;
 
-  --color-on-surface: #0f172a;
-  --color-on-surface-variant: #475569;
-  --color-outline: #94a3b8;
-  --color-outline-variant: #e2e8f0;
+  --color-border-hairline: #e6e6e3;
+  --color-border-strong: #d4d4d0;
 
-  --color-primary: #2563eb;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #2563eb;
-  --color-on-primary-container: #eff6ff;
-  --color-primary-hover: #1d4ed8;
+  --color-ink-primary: #141413;
+  --color-ink-body: #1f1f1e;
+  --color-ink-secondary: #5c5c59;
+  --color-ink-muted: #8e8e8a;
 
-  --color-secondary: #475569;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #f1f5f9;
-  --color-on-secondary-container: #1e293b;
-
-  --color-tertiary: #16a34a;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #ecfdf5;
-  --color-on-tertiary-container: #065f46;
-
-  --color-warning: #d97706;
-  --color-warning-container: #fffbeb;
-  --color-on-warning-container: #92400e;
-
-  --color-error: #e11d48;
-  --color-on-error: #ffffff;
-  --color-error-container: #fff1f2;
-  --color-on-error-container: #9f1239;
+  --color-primary: #141413;
+  --color-primary-hover: #2a2a28;
+  --color-record: #dc2626;
+  --color-star: #d97706;
+  --color-star-wash: #fefce8;
+  --color-ready: #16a34a;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @layer base {
   html, body {
     margin: 0;
     padding: 0;
-    background-color: #f6f7f9;
-    color: #0f172a;
+    background-color: #ffffff;
+    color: #141413;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -71,17 +52,16 @@
   }
 }
 
-/* Tabular numbers for telemetry & timestamps */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Material Symbols Outlined helper classes */
+/* Material Symbols Outlined */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   letter-spacing: normal;
   text-transform: none;
@@ -93,14 +73,61 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Refined Studio Card elevation */
-.studio-card {
-  background-color: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 4px 16px -4px rgba(15, 23, 42, 0.04);
+/* Slim 2px monochrome audio scrubber */
+input[type='range'].studio-scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
 }
 
-/* Minimal subtle scrollbars */
+input[type='range'].studio-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #141413;
+  border: 0;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.group\/player:hover input[type='range'].studio-scrubber::-webkit-slider-thumb,
+input[type='range'].studio-scrubber:focus-visible::-webkit-slider-thumb,
+input[type='range'].studio-scrubber:active::-webkit-slider-thumb {
+  opacity: 1;
+  transform: scale(1);
+}
+
+input[type='range'].studio-scrubber::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #141413;
+  border: 0;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.group\/player:hover input[type='range'].studio-scrubber::-moz-range-thumb,
+input[type='range'].studio-scrubber:focus-visible::-moz-range-thumb {
+  opacity: 1;
+}
+
+/* Thin subtle scrollbars (transparent track, #D4D4D0 thumb on hover) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: #d4d4d0 transparent;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -111,12 +138,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: transparent;
   border-radius: 9999px;
 }
 
+*:hover::-webkit-scrollbar-thumb {
+  background: #d4d4d0;
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #b4b4b0;
 }
 
 /* Native <dialog> modal rules (per modern-web-guidance: dialog + light-dismiss-a-dialog) */
@@ -140,14 +171,14 @@ dialog:modal {
 }
 
 dialog::backdrop {
-  background-color: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(4px);
+  background-color: rgba(20, 20, 19, 0.36);
+  backdrop-filter: blur(2px);
   overflow: hidden;
   overscroll-behavior: contain;
 }
 
-/* Accessible keyboard focus indicator */
+/* Crisp warm-monochrome keyboard focus ring */
 :where(button, a, input, select, textarea):focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 1.5px solid #141413;
   outline-offset: 2px;
 }

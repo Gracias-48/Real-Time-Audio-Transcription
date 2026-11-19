@@ -1,142 +1,96 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useAppStore } from '../lib/store'
 
 interface TopBarProps {
   onOpenSettings: () => void
   onOpenExport?: () => void
   onToggleSidebar?: () => void
+  isInspectorOpen?: boolean
+  onToggleInspector?: () => void
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
   onOpenSettings,
   onOpenExport,
   onToggleSidebar,
+  isInspectorOpen = true,
+  onToggleInspector,
 }) => {
-  const {
-    currentTab,
-    currentSessionTitle,
-    renameCurrentSession,
-    latencyMs,
-    rtf,
-    status,
-    settings,
-    updateSettings,
-  } = useAppStore()
+  const { currentTab, latencyMs, rtf, status, settings, updateSettings } = useAppStore()
 
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [titleDraft, setTitleDraft] = useState('')
-
-  const startTitleEdit = () => {
-    setTitleDraft(currentSessionTitle)
-    setIsEditingTitle(true)
-  }
-
-  const commitTitleEdit = () => {
-    if (titleDraft.trim()) {
-      renameCurrentSession(titleDraft.trim())
-    }
-    setIsEditingTitle(false)
-  }
-
-  const activeModelLabel =
-    settings.engine === 'browser'
-      ? `Whisper ${settings.browserModel.toUpperCase()} · Browser`
-      : `Whisper ${settings.pythonModel.toUpperCase()} · Python`
+  const activeModelName =
+    settings.engine === 'browser' ? settings.browserModel : settings.pythonModel
+  const modelTitle = `${activeModelName.charAt(0).toUpperCase()}${activeModelName.slice(1)}`
+  const engineOrigin = settings.engine === 'browser' ? 'Browser' : 'Python'
 
   const latencyDisplay = latencyMs > 0 ? `${(latencyMs / 1000).toFixed(2)}s` : '—'
   const rtfDisplay = rtf > 0 ? `${rtf.toFixed(2)}x` : '—'
+  const isRecordingOrPaused = status === 'listening' || status === 'paused'
+
+  const sectionLabel =
+    currentTab === 'transcriber'
+      ? 'Live Studio'
+      : currentTab === 'archive'
+      ? 'Session Archive'
+      : 'Evaluation Suite'
 
   return (
-    <header className="h-14 shrink-0 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-3 z-20">
-      {/* Left: Mobile Sidebar Toggle + Contextual Document Title */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
+    <header className="h-12 shrink-0 bg-white border-b border-[#E6E6E3] px-4 flex items-center justify-between gap-3 z-20">
+      {/* Left: Mobile Drawer Trigger + Quiet Breadcrumb & Plain Engine Status */}
+      <div className="flex items-center gap-2.5 min-w-0">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
             type="button"
-            aria-label="Open navigation menu"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition lg:hidden shrink-0 cursor-pointer"
+            aria-label="Open navigation sidebar"
+            className="w-7 h-7 rounded-[6px] text-[#5C5C59] hover:text-[#141413] hover:bg-[#F1F1EF] flex items-center justify-center lg:hidden shrink-0 transition-colors duration-150 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
               menu
             </span>
           </button>
         )}
 
-        {currentTab === 'transcriber' ? (
-          <div className="flex items-center gap-2.5 min-w-0">
-            {isEditingTitle ? (
-              <input
-                type="text"
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                onBlur={commitTitleEdit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitTitleEdit()
-                  if (e.key === 'Escape') setIsEditingTitle(false)
-                }}
-                autoFocus
-                aria-label="Lecture session title"
-                className="text-sm font-semibold text-slate-900 bg-slate-50 border border-blue-400 rounded-md px-2.5 py-1 focus:outline-none w-52 sm:w-72"
-              />
-            ) : (
+        <div className="flex items-center gap-2 text-[12px] min-w-0">
+          <span className="font-medium text-[#141413] shrink-0">{sectionLabel}</span>
+          {currentTab === 'transcriber' && (
+            <>
+              <span className="text-[#D4D4D0] select-none">/</span>
               <button
                 type="button"
-                onClick={startTitleEdit}
-                title="Click to rename this lecture session"
-                className="group flex items-center gap-1.5 text-left min-w-0 cursor-pointer rounded-md px-1.5 py-1 -ml-1.5 hover:bg-slate-100/80 transition"
+                onClick={onOpenSettings}
+                className="inline-flex items-center gap-1.5 text-[#5C5C59] hover:text-[#141413] transition-colors duration-150 truncate cursor-pointer"
+                title="Configure Whisper model & audio input"
               >
-                <h1 className="text-[14px] font-semibold tracking-tight text-slate-900 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
-                  {currentSessionTitle}
-                </h1>
                 <span
-                  className="material-symbols-outlined text-[14px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  aria-hidden="true"
-                >
-                  edit
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    status === 'listening'
+                      ? 'bg-[#DC2626] animate-pulse'
+                      : status === 'error'
+                      ? 'bg-[#DC2626]'
+                      : 'bg-[#16A34A]'
+                  }`}
+                />
+                <span className="truncate">
+                  Whisper {modelTitle} · {engineOrigin}
                 </span>
               </button>
-            )}
-
-            {/* Engine Status Pill (opens Settings on click) */}
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100/80 hover:bg-slate-200/70 text-[11px] font-medium text-slate-600 transition cursor-pointer shrink-0"
-              title="Configure Whisper model & audio device"
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  status === 'listening'
-                    ? 'bg-emerald-500 animate-pulse'
-                    : status === 'paused'
-                    ? 'bg-amber-500'
-                    : status === 'error'
-                    ? 'bg-rose-500'
-                    : 'bg-slate-400'
-                }`}
-              />
-              <span>{activeModelLabel}</span>
-            </button>
-          </div>
-        ) : (
-          <h1 className="text-[14px] font-semibold tracking-tight text-slate-900 truncate">
-            {currentTab === 'archive' ? 'Session Archive & History' : 'ASR Evaluation & Benchmarks'}
-          </h1>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Right: Focused Utility Controls (Zero Duplicate Navigation Buttons) */}
-      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-        {/* Language Segmented Pill */}
+      {/* Right: Tight 8px Utility Group */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Clean ID | EN Segmented Toggle */}
         <div
-          className={`inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200/70 text-[11px] font-medium ${
-            status === 'listening' || status === 'paused' ? 'opacity-85' : ''
+          className={`inline-flex items-center h-7 p-0.5 rounded-[6px] bg-[#F1F1EF] text-[12px] font-medium ${
+            isRecordingOrPaused ? 'opacity-80' : ''
           }`}
           role="group"
           aria-label="Transcription language"
           title={
-            status === 'listening' || status === 'paused'
+            isRecordingOrPaused
               ? 'Stop recording first to change transcription language'
               : 'Select transcription language'
           }
@@ -145,10 +99,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="button"
             aria-pressed={settings.language === 'id'}
             onClick={() => updateSettings({ language: 'id' })}
-            className={`px-2 py-1 rounded-md transition cursor-pointer ${
+            className={`h-6 px-2 rounded-[4px] transition-colors duration-150 cursor-pointer ${
               settings.language === 'id'
-                ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white text-[#141413] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                : 'text-[#5C5C59] hover:text-[#141413]'
             }`}
           >
             ID
@@ -157,41 +111,57 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="button"
             aria-pressed={settings.language === 'en'}
             onClick={() => updateSettings({ language: 'en' })}
-            className={`px-2 py-1 rounded-md transition cursor-pointer ${
+            className={`h-6 px-2 rounded-[4px] transition-colors duration-150 cursor-pointer ${
               settings.language === 'en'
-                ? 'bg-white text-slate-900 shadow-2xs font-semibold'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-white text-[#141413] shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                : 'text-[#5C5C59] hover:text-[#141413]'
             }`}
           >
             EN
           </button>
         </div>
 
-        {/* Honest Live Telemetry Pill */}
+        {/* Quiet Monospace Telemetry (No Pill Border) */}
         <div
-          className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200/70 font-mono text-[11px] text-slate-500 tabular-nums"
-          title="Rolling real-time latency and Real-Time Factor (RTF < 1.0x is faster than real-time)"
+          className="hidden sm:flex items-center gap-1.5 px-1.5 font-mono text-[11px] text-[#8E8E8A] tabular-nums select-none"
+          title="Rolling real-time decode latency and Real-Time Factor"
         >
-          <span>
-            Lat <strong className="text-slate-800 font-semibold">{latencyDisplay}</strong>
-          </span>
-          <span className="text-slate-300">|</span>
-          <span>
-            RTF <strong className="text-slate-800 font-semibold">{rtfDisplay}</strong>
-          </span>
+          <span>Lat {latencyDisplay}</span>
+          <span>·</span>
+          <span>RTF {rtfDisplay}</span>
         </div>
 
-        {/* Single Clean Export CTA */}
+        {/* Demoted Secondary Export Button */}
         {onOpenExport && currentTab === 'transcriber' && (
           <button
             type="button"
             onClick={onOpenExport}
-            className="h-8 px-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition shadow-xs cursor-pointer"
+            className="h-7 px-2.5 inline-flex items-center gap-1.5 rounded-[6px] bg-white border border-[#E6E6E3] hover:bg-[#F7F7F5] text-[#141413] text-[12px] font-medium transition-colors duration-150 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-[15px]" aria-hidden="true">
+            <span className="material-symbols-outlined text-[14px] text-[#5C5C59]" aria-hidden="true">
               ios_share
             </span>
             <span>Export</span>
+          </button>
+        )}
+
+        {/* Right Inspector Collapse Toggle */}
+        {currentTab === 'transcriber' && onToggleInspector && (
+          <button
+            type="button"
+            onClick={onToggleInspector}
+            aria-pressed={isInspectorOpen}
+            aria-label={isInspectorOpen ? 'Collapse notes inspector' : 'Expand notes inspector'}
+            title={isInspectorOpen ? 'Hide inspector panel' : 'Show inspector panel'}
+            className={`w-7 h-7 rounded-[6px] flex items-center justify-center transition-colors duration-150 cursor-pointer ${
+              isInspectorOpen
+                ? 'text-[#141413] bg-[#F1F1EF]'
+                : 'text-[#5C5C59] hover:text-[#141413] hover:bg-[#F1F1EF]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[17px]" aria-hidden="true">
+              right_panel_open
+            </span>
           </button>
         )}
       </div>
